@@ -1,0 +1,17 @@
+@font-face {
+	font-family: 'Asap';
+	src: url('assets/Asap-VariableFont_wght.woff2') format('woff2 supports variations'),
+         url('assets/Asap-VariableFont_wght.woff2') format('woff2-variations');
+	font-weight: 400 700;
+}
+
+html *
+{
+   color: #000 !important;
+   font-family: 'Asap' !important;
+}
+
+.site-title {
+    font-size: 2em;
+    font-weight: 600;
+}
