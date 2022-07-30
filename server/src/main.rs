@@ -1,7 +1,8 @@
 use std::sync::Mutex;
 
-use actix_files::Files;
+use actix_files::{Files, NamedFile};
 use actix_web::{get, web, web::Data, App, HttpResponse, HttpServer, Responder};
+use actix_web::dev::{fn_service, ServiceResponse, ServiceRequest};
 use log::info;
 use twitch_sources_rework::MyTestStruct;
 
@@ -30,7 +31,16 @@ async fn main() -> std::io::Result<()> {
             .app_data(Mutex::new(0))
             .service(hello)
             .service(jsondata)
-            .service(Files::new("/", "./dist/").index_file("index.html"))
+            .default_service(Files::new("/", "./dist/").index_file("index.html").default_handler(
+                fn_service(
+                    |req: ServiceRequest| async {
+                        let (req, _) = req.into_parts();
+                        let file = NamedFile::open_async("./dist/index.html").await?;
+                        let res = file.into_response(&req);
+                        return Ok(ServiceResponse::new(req, res));
+                    }
+                )
+            ))
     })
     .bind("127.0.0.1:8080")?
     .run()

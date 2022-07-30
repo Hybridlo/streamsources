@@ -4,20 +4,30 @@ use anyhow::Result;
 use twitch_sources_rework::MyTestStruct;
 use yew::prelude::*;
 use yew_router::prelude::*;
-use components::header::Header;
+use components::*;
+
+#[derive(Clone, Routable, PartialEq)]
+enum MainRoute {
+    #[at("/")]
+    Index,
+    #[not_found]
+    #[at("/404")]
+    NotFound,
+}
+
+fn switch(routes: &MainRoute) -> Html {
+    match routes {
+        MainRoute::Index => html! { <Index /> },
+        MainRoute::NotFound => html! { <h1>{ "404" }</h1> },
+    }
+}
 
 #[function_component(Model)]
 fn model() -> Html {
     html! {
-        <>
-            <Header />
-            <div>
-                <button>{"+1"}</button>
-                <button>{"+2"}</button>
-                <button>{"Fetch"}</button>
-                <button>{"Fetch"}</button>
-            </div>
-        </>
+        <BrowserRouter>
+            <Switch<MainRoute> render={Switch::render(switch)} />
+        </BrowserRouter>
     }
 }
 
