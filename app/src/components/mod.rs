@@ -1,4 +1,5 @@
-mod index;
-mod header;
+mod pages;
+mod containers;
+mod widgets;
 
-pub use index::Index;
+pub use pages::Index;

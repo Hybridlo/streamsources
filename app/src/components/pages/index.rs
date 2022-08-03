@@ -1,5 +1,5 @@
 use yew::prelude::*;
-use super::header::Header;
+use crate::components::containers::Header;
 
 #[function_component(Index)]
 pub fn index() -> Html {
