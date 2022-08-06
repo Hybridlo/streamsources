@@ -6,8 +6,8 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use components::*;
 
-#[derive(Clone, Routable, PartialEq)]
-enum MainRoute {
+#[derive(Clone, Routable, PartialEq, Copy)]
+pub enum MainRoute {
     #[at("/")]
     Index,
     #[not_found]
@@ -18,7 +18,7 @@ enum MainRoute {
 fn switch(routes: &MainRoute) -> Html {
     match routes {
         MainRoute::Index => html! { <Index /> },
-        MainRoute::NotFound => html! { <h1>{ "404" }</h1> },
+        MainRoute::NotFound => html! { <Page404 /> },
     }
 }
 

@@ -13,6 +13,14 @@ html *
 .site-title {
     font-size: 2em;
     font-weight: 600;
+    > a {
+        color:rgba(0, 0, 0, 0.5);
+        text-decoration: none;
+    }
+
+    > a:hover {
+        color:rgba(0, 0, 0, 1);
+    }
 }
 
 .login-button {
@@ -31,4 +39,8 @@ html *
     --bs-btn-disabled-border-color: #A970FF;
     --bs-gradient: none;
     color: #A970FF;
+}
+
+.source-button {
+    font-size: 1.25em;
 }
