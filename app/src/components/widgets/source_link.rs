@@ -1,11 +1,11 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::MainRoute;
+use crate::components::BaseRoute;
 
 #[derive(Properties, PartialEq)]
 pub struct SourceLinkProps {
-    pub href: MainRoute,
+    pub href: BaseRoute,
     pub name: &'static str,
     #[prop_or(false)]
     pub disabled: bool
@@ -21,6 +21,6 @@ pub fn source_link(props: &SourceLinkProps) -> Html {
     };
 
     html! {
-        <Link<MainRoute> to={props.href} classes={ classes!(link_active) }>{ props.name }</Link<MainRoute>>
+        <Link<BaseRoute> to={props.href} classes={ classes!(link_active) }>{ props.name }</Link<BaseRoute>>
     }
 }

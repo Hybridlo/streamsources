@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::MainRoute;
+use crate::components::BaseRoute;
 use crate::components::widgets::LoginButton;
 
 #[function_component(Header)]
@@ -10,7 +10,7 @@ pub fn header() -> Html {
         <div class="border-bottom mb-3">
             <div class="container">
                 <div class="d-flex flex-row p-2 align-items-center">
-                    <span class="site-title"><Link<MainRoute> to={MainRoute::Index}>{ "Twitch sources (beta)" }</Link<MainRoute>></span>
+                    <span class="site-title"><Link<BaseRoute> to={BaseRoute::Index}>{ "Twitch sources (beta)" }</Link<BaseRoute>></span>
                     <LoginButton />
                 </div>
             </div>

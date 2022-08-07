@@ -6,32 +6,17 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use components::*;
 
-#[derive(Clone, Routable, PartialEq, Copy)]
-pub enum MainRoute {
-    #[at("/")]
-    Index,
-    #[not_found]
-    #[at("/404")]
-    NotFound,
-}
-
-fn switch(routes: &MainRoute) -> Html {
-    match routes {
-        MainRoute::Index => html! { <Index /> },
-        MainRoute::NotFound => html! { <Page404 /> },
-    }
-}
-
-#[function_component(Model)]
-fn model() -> Html {
+#[function_component(App)]
+fn app() -> Html {
     html! {
+        // wrap the whole app in router to have history context everywhere
         <BrowserRouter>
-            <Switch<MainRoute> render={Switch::render(switch)} />
+            <Base />
         </BrowserRouter>
     }
 }
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());
-    yew::start_app::<Model>();
+    yew::start_app::<App>();
 }
