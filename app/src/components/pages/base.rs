@@ -4,7 +4,7 @@ use yew_router::prelude::*;
 use crate::components::containers::Header;
 use super::Index;
 use super::Page404;
-use super::PredictionsSettings;
+use super::source_settings::PredictionsSettings;
 
 #[derive(Clone, Routable, PartialEq, Copy)]
 pub enum BaseRoute {

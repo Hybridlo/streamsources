@@ -1,146 +1,52 @@
-use yew::{prelude::{Html, html, UseStateHandle}};
-
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum SourceColor {
     White,
+    #[default]
     Black
 }
 
-impl Default for SourceColor {
-    fn default() -> Self {
-        Self::Black
-    }
-}
-
-#[derive(Default)]
-pub struct NormalSourceOptions {
+#[derive(Default, Clone, Copy)]
+pub struct PredictionsSourceOptions {
     pub color: SourceColor,
     pub is_expanded: bool
 }
 
-impl NormalSourceOptions {
+impl PredictionsSourceOptions {
+    pub fn new() -> Self {
+        return Default::default();
+    }
+
     pub fn with_color(&self, color: SourceColor) -> Self {
         Self {
             color,
-            is_expanded: self.is_expanded
+            ..*self
         }
     }
 
     pub fn with_is_expanded(&self, is_expanded: bool) -> Self {
         Self {
-            color: self.color,
-            is_expanded
+            is_expanded,
+            ..*self
         }
     }
 
-    fn render_color_option(state: &UseStateHandle<NormalSourceOptions>, color: SourceColor) -> Html {
-        // makes sure to fill all options if there'll be more
-        match color {
-            SourceColor::White => html! {
-                <div class="form-check">
-                    <input
-                        class="form-check-input" type="radio" name="textColor" id="textColorWhite"
-                        onclick={
-                                let state = state.clone();
-                                move |_| state.set((*state).with_color(color))
-                            }
-                        />
-                        <label class="form-check-label" for="textColorWhite">
-                        { "While" }
-                    </label>
-                </div>
-            },
-            SourceColor::Black => html! {
-                <div class="form-check">
-                    <input
-                        class="form-check-input" type="radio" name="textColor" id="textColorBlack" checked=true
-                        onclick={
-                                let state = state.clone();
-                                move |_| state.set((*state).with_color(color))
-                            }
-                        />
-                        <label class="form-check-label" for="textColorBlack">
-                        { "Black" }
-                    </label>
-                </div>
-            },
-        }
+    pub fn item_to_params(&self) -> String {
+        let mut res = String::new();
+
+        match self.color {
+            SourceColor::White => res += "color=white",
+            SourceColor::Black => res += "color=black",
+        };
+
+        if self.is_expanded { res += "&expanded=yes" }
+
+        return res;
     }
 
-    fn render_color_options(state: &UseStateHandle<NormalSourceOptions>) -> Html {
-        html! {
-            <div class="col-6">
-                <div class="p-3 border border-dark border-2 h-100">
-                    <h5 class="text-center">{ "Text color" }</h5>
-                    { NormalSourceOptions::render_color_option(state, SourceColor::Black) }
-                    { NormalSourceOptions::render_color_option(state, SourceColor::White) }
-                </div>
-            </div>
-        }
-    }
-
-    fn render_expand_option(state: &UseStateHandle<NormalSourceOptions>, is_expanded: bool) -> Html {
-        match is_expanded {
-            true => html! {
-                <div class="col-12">
-                    <div class="form-check">
-                        <input
-                            class="form-check-input" type="radio" name="expandedOption" id="expandedOptionTrue"
-                            onclick={
-                                let state = state.clone();
-                                move |_| state.set((*state).with_is_expanded(is_expanded))
-                            }
-                        />
-                            <label class="form-check-label" for="expandedOptionTrue">
-                            { "Maximized" }
-                        </label>
-                    </div>
-                </div>
-            },
-            false => html! {
-                <div class="col-12">
-                    <div class="form-check">
-                        <input
-                            class="form-check-input" type="radio" name="expandedOption" id="expandedOptionFalse" checked=true
-                            onclick={
-                                let state = state.clone();
-                                move |_| state.set((*state).with_is_expanded(is_expanded))
-                            }
-                        />
-                        <label class="form-check-label" for="expandedOptionFalse">
-                            { "Minimized" }
-                        </label>
-                        </div>
-                </div>
-            },
-        }
-    }
-
-    fn render_expand_options(state: &UseStateHandle<NormalSourceOptions>) -> Html {
-        html! {
-            <div class="col-6">
-                <div class="p-3 border border-dark border-2 h-100">
-                    <h5 class="text-center">{ "Size options" }</h5>
-                    <div class="row">
-                        { NormalSourceOptions::render_expand_option(state, false) }
-                        { NormalSourceOptions::render_expand_option(state, true) }
-                    </div>
-                </div>
-            </div>
-        }
-    }
-    
-    pub fn to_html(state: &UseStateHandle<NormalSourceOptions>) -> Html {
-        html! {
-            <>
-                <h4 class="text-center">{ "Settings" }</h4>
-                <div class="container mb-3">
-                    <div class="row gx-3">
-                        { NormalSourceOptions::render_color_options(state) }
-                        { NormalSourceOptions::render_expand_options(state) }
-                    </div>
-                </div>
-            </>
+    pub fn params_to_items(params: &str) -> Self {
+        Self {
+            color: if params.contains("color=white") { SourceColor::White } else { Default::default() },
+            is_expanded: if params.contains("expanded=yes") { true } else { Default::default() }
         }
     }
 }
