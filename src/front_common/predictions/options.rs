@@ -1,9 +1,4 @@
-#[derive(Clone, Copy, Debug, PartialEq, Default)]
-pub enum SourceColor {
-    White,
-    #[default]
-    Black
-}
+use crate::front_common::SourceColor;
 
 #[derive(Default, Clone, Copy)]
 pub struct PredictionsSourceOptions {

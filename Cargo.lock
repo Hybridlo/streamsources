@@ -1357,8 +1357,10 @@ dependencies = [
 name = "twitch-sources-rework"
 version = "0.1.0"
 dependencies = [
+ "gloo-timers",
  "rand",
  "serde",
+ "yew",
 ]
 
 [[package]]

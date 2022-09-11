@@ -3,6 +3,11 @@ pub mod front_common;
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 
+const GLOBAL_DELAY_VALUE_SECONDS: u32 = 1;
+const GLOBAL_DELAY_VALUE: u32 = GLOBAL_DELAY_VALUE_SECONDS * 1_000;
+
+const FPS: u32 = 60;
+
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MyTestStruct {
     v1: usize,

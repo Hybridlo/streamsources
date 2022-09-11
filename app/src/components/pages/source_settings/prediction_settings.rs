@@ -6,7 +6,8 @@ use yew::use_state;
 use yew::prelude::*;
 use yew_hooks::prelude::use_clipboard;
 
-use twitch_sources_rework::front_common::source_options::{PredictionsSourceOptions, SourceColor};
+use twitch_sources_rework::front_common::SourceColor;
+use twitch_sources_rework::front_common::predictions::*;
 
 #[derive(Default)]
 pub struct PredictionsSettingsState {
@@ -218,6 +219,72 @@ impl PredictionsSettingsState {
             </>
         })
     }
+
+    fn test_predictions_state() -> Html {
+        let source_state = use_state(|| PredictionState {
+            id: "".to_string(),
+            title: "".to_string(),
+            winning_outcome_id: None,
+            outcomes: vec![PredictionOutcomeState {
+                id: "".to_string(),
+                title: "Title1".to_string(),
+                color: "".to_string(),
+                users: 1,
+                channel_points: 0,
+                top_predictors: vec![],
+            }, PredictionOutcomeState {
+                id: "".to_string(),
+                title: "Title2".to_string(),
+                color: "".to_string(),
+                users: 1,
+                channel_points: 0,
+                top_predictors: vec![],
+            }]
+        });
+        let animator = use_mut_ref(|| PredictionStateAnimator::new(&source_state));
+
+        let change_state_callback = {
+            let animator = animator.clone();
+
+            Callback::from(move |_| {
+                let mut animator_borrow = animator.borrow_mut();
+
+                (*animator_borrow).set_state(PredictionState {
+                    id: "".to_string(),
+                    title: "".to_string(),
+                    winning_outcome_id: None,
+                    outcomes: vec![PredictionOutcomeState {
+                        id: "".to_string(),
+                        title: "Title1".to_string(),
+                        color: "".to_string(),
+                        users: 1,
+                        channel_points: 10_000,
+                        top_predictors: vec![],
+                    }, PredictionOutcomeState {
+                        id: "".to_string(),
+                        title: "Title2".to_string(),
+                        color: "".to_string(),
+                        users: 1,
+                        channel_points: 20_000,
+                        top_predictors: vec![],
+                    }]
+                })
+            })
+        };
+
+        html! {
+            <>
+                <div>
+                    {
+                        (*source_state).outcomes.iter().map(|outcome| {
+                            html! {<p> { format!("{}: {}", outcome.title, outcome.channel_points) } </p>}
+                        }).collect::<Html>()
+                    }
+                </div>
+                <button onclick={change_state_callback}>{"Test"}</button>
+            </>
+        }
+    }
     
     pub fn to_html() -> Result<Html, JsValue> {
         let state: UseStateHandle<PredictionsSettingsState> = use_state(|| PredictionsSettingsState::new());
@@ -232,6 +299,7 @@ impl PredictionsSettingsState {
                     </div>
                 </div>
                 { PredictionsSettingsState::render_copy_button(&state)? }
+                { PredictionsSettingsState::test_predictions_state() }
             </>
         })
     }
