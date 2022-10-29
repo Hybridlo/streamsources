@@ -1,19 +1,20 @@
 use std::cell::RefCell;
 use std::rc::Rc;
+use chrono::{DateTime, Utc};
 
-use yew::UseStateHandle;
+use yew::UseStateSetter;
 use gloo_timers::callback::Interval;
 
 use crate::{FPS, GLOBAL_DELAY_VALUE, GLOBAL_DELAY_VALUE_SECONDS};
 use super::super::transition_funcs::ease_in_out_formula;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct UserPredictionState {
     pub user_name: String,
     pub channel_points_used: i64
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PredictionOutcomeState {
     pub id: String,
     pub title: String,
@@ -23,17 +24,47 @@ pub struct PredictionOutcomeState {
     pub top_predictors: Vec<UserPredictionState>
 }
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum PreditionStatus {
+    InProgress,
+    Locked,
+    #[default]
+    Finished
+}
+
+#[derive(Clone, Default, Debug, PartialEq)]
 pub struct PredictionState {
     pub id: String,
     pub title: String,
     pub winning_outcome_id: Option<String>,
-    pub outcomes: Vec<PredictionOutcomeState>
+    pub outcomes: Vec<PredictionOutcomeState>,
+    pub lock_time: DateTime<Utc>,
+    pub status: PreditionStatus,
+    pub show_element: bool,
+    pub show_status: bool
 }
 
 impl PredictionState {
-    pub fn new() -> Self {
-        return Default::default();
+    pub fn clone_with_empty_outcomes(&self) -> Self {
+        return PredictionState {
+            id: self.id.clone(),
+            title: self.title.clone(),
+            winning_outcome_id: self.winning_outcome_id.clone(),
+            outcomes: Default::default(),
+            lock_time: self.lock_time.clone(),
+            status: self.status.clone(),
+            show_element: self.show_element,
+            show_status: self.show_status
+        }
+    }
+
+    pub fn get_outcome_percents(&self, outcome_id: &str) -> i64 {
+        let sum = self.outcomes.iter().fold(0, |curr, val| curr + val.channel_points);
+
+        // outcome_id should always come from the vec itself, otherwise something wrong is going on
+        let outcome = self.outcomes.iter().find(|v| v.id == outcome_id).unwrap();
+
+        return (((outcome.channel_points as f64) / (sum as f64)) * 100.0).round() as _;
     }
 }
 
@@ -41,52 +72,56 @@ pub struct PredictionStateAnimator {
     prev_state: PredictionState,
     next_state: PredictionState,
 
-    pub state: UseStateHandle<PredictionState>,
+    pub state_setter: UseStateSetter<PredictionState>,
 
     timer: Rc<RefCell<f64>>,
     animation_handle: Rc<RefCell<Option<Interval>>>
 }
 
 impl PredictionStateAnimator {
-    pub fn new(state_handle: &UseStateHandle<PredictionState>) -> Self {
+    pub fn new(state_setter: UseStateSetter<PredictionState>, curr_state: &PredictionState) -> Self {
         Self {
-            prev_state: (**state_handle).clone(),
+            prev_state: curr_state.clone(),
             next_state: Default::default(),
-            state: state_handle.clone(),
+            state_setter,
             timer: Default::default(),
             animation_handle: Default::default()
         }
     }
 
-    pub fn set_state(&mut self, new_state: PredictionState) {
+    pub fn set_state(&mut self, new_state: PredictionState, curr_state: &PredictionState) {
+        self.prev_state = curr_state.clone();
         self.next_state = new_state;
+        self.next_state.outcomes.sort_by(|a, b| b.channel_points.cmp(&a.channel_points));
 
         *(self.timer.borrow_mut()) = 0.0;
+
+        // TODO: handle prediction status change
 
         if let Some(anim_handle) = self.animation_handle.take() {
             anim_handle.cancel();
         };
 
         {
-            let state_ref = self.state.clone();
+            let state_setter = self.state_setter.clone();
             let timer_ref = self.timer.clone();
             let anim_handle_ref = self.animation_handle.clone();
             let prev_state = self.prev_state.clone();
             let next_state = self.next_state.clone();
 
-            self.animation_handle = Rc::new(RefCell::new(Some(Interval::new(GLOBAL_DELAY_VALUE / FPS, move || {
+            self.animation_handle.replace(Some(Interval::new(GLOBAL_DELAY_VALUE / FPS, move || {
                 let mut timer_borrow = timer_ref.borrow_mut();
                 *timer_borrow += (GLOBAL_DELAY_VALUE_SECONDS as f64) / (FPS as f64);
 
                 if *timer_borrow > (GLOBAL_DELAY_VALUE_SECONDS as f64) {
-                    state_ref.set(next_state.clone());
+                    state_setter.set(next_state.clone());
                     if let Some(anim_handle) = anim_handle_ref.take() {
                         anim_handle.cancel();
                     };
                     return;
                 }
 
-                let mut intermediate_state = PredictionState::new();
+                let mut intermediate_state = next_state.clone_with_empty_outcomes();
 
                 for outcome in next_state.outcomes.iter() {
                     // outcomes can never be different; if a new event is fired, there must be a new animator
@@ -145,8 +180,8 @@ impl PredictionStateAnimator {
                     intermediate_state.outcomes.push(intermediate_outcome);
                 }
 
-                state_ref.set(intermediate_state);
-            }))));
+                state_setter.set(intermediate_state);
+            })));
         }
     }
 }

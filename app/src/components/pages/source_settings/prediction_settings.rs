@@ -1,10 +1,12 @@
 use std::{rc::Rc, cell::RefCell};
 
+use chrono::Duration;
 use wasm_bindgen::JsValue;
 use gloo_timers::callback::Timeout;
 use yew::use_state;
 use yew::prelude::*;
 use yew_hooks::prelude::use_clipboard;
+use chrono::offset::Utc;
 
 use twitch_sources_rework::front_common::SourceColor;
 use twitch_sources_rework::front_common::predictions::*;
@@ -223,63 +225,78 @@ impl PredictionsSettingsState {
     fn test_predictions_state() -> Html {
         let source_state = use_state(|| PredictionState {
             id: "".to_string(),
-            title: "".to_string(),
+            title: "Test title".to_string(),
             winning_outcome_id: None,
-            outcomes: vec![PredictionOutcomeState {
-                id: "".to_string(),
-                title: "Title1".to_string(),
-                color: "".to_string(),
-                users: 1,
-                channel_points: 0,
-                top_predictors: vec![],
-            }, PredictionOutcomeState {
-                id: "".to_string(),
-                title: "Title2".to_string(),
-                color: "".to_string(),
-                users: 1,
-                channel_points: 0,
-                top_predictors: vec![],
-            }]
+            outcomes: vec![
+                PredictionOutcomeState {
+                    id: "1".to_string(),
+                    title: "Title1".to_string(),
+                    color: "".to_string(),
+                    users: 1,
+                    channel_points: 10_000,
+                    top_predictors: vec![],
+                }, PredictionOutcomeState {
+                    id: "2".to_string(),
+                    title: "Title2".to_string(),
+                    color: "".to_string(),
+                    users: 1,
+                    channel_points: 20_000,
+                    top_predictors: vec![],
+                }
+            ],
+            lock_time: Utc::now() + Duration::seconds(20),
+            status: PreditionStatus::Locked,
+            show_element: false,
+            show_status: false
         });
-        let animator = use_mut_ref(|| PredictionStateAnimator::new(&source_state));
+
+        let animator = use_mut_ref(|| PredictionStateAnimator::new(source_state.setter(), &source_state));
 
         let change_state_callback = {
             let animator = animator.clone();
+            let source_state = source_state.clone();
 
             Callback::from(move |_| {
                 let mut animator_borrow = animator.borrow_mut();
 
+                let opt1_p = source_state.outcomes[0].channel_points;
+                let opt2_p = source_state.outcomes[1].channel_points;
+
                 (*animator_borrow).set_state(PredictionState {
                     id: "".to_string(),
-                    title: "".to_string(),
+                    title: "Test title".to_string(),
                     winning_outcome_id: None,
-                    outcomes: vec![PredictionOutcomeState {
-                        id: "".to_string(),
-                        title: "Title1".to_string(),
-                        color: "".to_string(),
-                        users: 1,
-                        channel_points: 10_000,
-                        top_predictors: vec![],
-                    }, PredictionOutcomeState {
-                        id: "".to_string(),
-                        title: "Title2".to_string(),
-                        color: "".to_string(),
-                        users: 1,
-                        channel_points: 20_000,
-                        top_predictors: vec![],
-                    }]
-                })
+                    outcomes: vec![
+                        PredictionOutcomeState {
+                            id: "1".to_string(),
+                            title: "Title1".to_string(),
+                            color: "".to_string(),
+                            users: 1,
+                            channel_points: opt1_p + 10_000,
+                            top_predictors: vec![],
+                        },
+                        PredictionOutcomeState {
+                            id: "2".to_string(),
+                            title: "Title2".to_string(),
+                            color: "".to_string(),
+                            users: 1,
+                            channel_points: opt2_p + 10_000,
+                            top_predictors: vec![],
+                        }
+                    ],
+                    lock_time: Utc::now() + Duration::seconds(20),
+                    status: PreditionStatus::Locked,        
+                    show_element: true,
+                    show_status: true
+                },
+                &source_state)
             })
         };
 
         html! {
             <>
-                <div>
-                    {
-                        (*source_state).outcomes.iter().map(|outcome| {
-                            html! {<p> { format!("{}: {}", outcome.title, outcome.channel_points) } </p>}
-                        }).collect::<Html>()
-                    }
+                <div style="height: 500px">
+                    <components::PredictionsList state={source_state}/>
                 </div>
                 <button onclick={change_state_callback}>{"Test"}</button>
             </>
