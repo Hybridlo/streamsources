@@ -2,7 +2,7 @@ use yew::prelude::*;
 use yew_style_in_rs::style;
 
 use super::super::state::{PredictionState, PreditionStatus};
-use crate::front_common::scalable_wrapper;
+use crate::front_common::{scalable_wrapper, predictions::PredUIState};
 
 fn title(title: &str) -> Html {
     html! {
@@ -40,7 +40,10 @@ fn options_list(state: &PredictionState) -> Html {
 
 #[derive(PartialEq, Properties)]
 pub struct ListProps {
-    pub state: UseStateHandle<PredictionState>
+    pub state: UseStateHandle<PredictionState>,
+    pub show_element_state: UseStateHandle<bool>,
+    pub show_status_state: UseStateHandle<bool>,
+    pub status_state: UseStateHandle<PreditionStatus>,
 }
 
 #[function_component(PredictionsList)]
@@ -75,12 +78,12 @@ pub fn predictions_list(props: &ListProps) -> Html {
 
     scalable_wrapper(html! {
         <div class={classes!(css)}>
-            <div class={if props.state.show_element {"element show"} else {"element hide"}}>
+            <div class={if *props.show_element_state {"element show"} else {"element hide"}}>
                 <div>
                     { title(&props.state.title) }
                 </div>
-                <div class={if props.state.show_element {"status show"} else {"status hide"}}>
-                    { status(&props.state.status) }
+                <div class={if *props.show_status_state {"status show"} else {"status hide"}}>
+                    { status(&props.status_state) }
                 </div>
                 { options_list(&props.state) }
             </div>

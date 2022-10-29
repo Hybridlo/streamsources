@@ -245,12 +245,20 @@ impl PredictionsSettingsState {
                 }
             ],
             lock_time: Utc::now() + Duration::seconds(20),
-            status: PreditionStatus::Locked,
-            show_element: false,
-            show_status: false
+            status: PreditionStatus::Locked
         });
 
-        let animator = use_mut_ref(|| PredictionStateAnimator::new(source_state.setter(), &source_state));
+        let show_element_state = use_state(|| false);
+        let show_status_state = use_state(|| true);
+        let status_state = use_state(|| PreditionStatus::default());
+
+        let animator = use_mut_ref(|| PredictionStateAnimator::new(
+            source_state.setter(),
+            &source_state,
+            show_element_state.setter(),
+            show_status_state.setter(),
+            status_state.setter()
+        ));
 
         let change_state_callback = {
             let animator = animator.clone();
@@ -262,11 +270,11 @@ impl PredictionsSettingsState {
                 let opt1_p = source_state.outcomes[0].channel_points;
                 let opt2_p = source_state.outcomes[1].channel_points;
 
-                (*animator_borrow).set_state(PredictionState {
-                    id: "".to_string(),
-                    title: "Test title".to_string(),
-                    winning_outcome_id: None,
-                    outcomes: vec![
+                (*animator_borrow).set_state(PredictionState::new(
+                    "".to_string(),
+                    "Test title".to_string(),
+                    None,
+                    vec![
                         PredictionOutcomeState {
                             id: "1".to_string(),
                             title: "Title1".to_string(),
@@ -284,11 +292,9 @@ impl PredictionsSettingsState {
                             top_predictors: vec![],
                         }
                     ],
-                    lock_time: Utc::now() + Duration::seconds(20),
-                    status: PreditionStatus::Locked,        
-                    show_element: true,
-                    show_status: true
-                },
+                    Utc::now() + Duration::seconds(20),
+                    PreditionStatus::Finished
+                ),
                 &source_state)
             })
         };
@@ -296,7 +302,7 @@ impl PredictionsSettingsState {
         html! {
             <>
                 <div style="height: 500px">
-                    <components::PredictionsList state={source_state}/>
+                    <components::PredictionsList state={source_state} {show_status_state} {show_element_state} {status_state}/>
                 </div>
                 <button onclick={change_state_callback}>{"Test"}</button>
             </>

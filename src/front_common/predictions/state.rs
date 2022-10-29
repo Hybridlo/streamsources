@@ -3,7 +3,7 @@ use std::rc::Rc;
 use chrono::{DateTime, Utc};
 
 use yew::UseStateSetter;
-use gloo_timers::callback::Interval;
+use gloo_timers::callback::{Interval, Timeout};
 
 use crate::{FPS, GLOBAL_DELAY_VALUE, GLOBAL_DELAY_VALUE_SECONDS};
 use super::super::transition_funcs::ease_in_out_formula;
@@ -21,7 +21,7 @@ pub struct PredictionOutcomeState {
     pub color: String,
     pub users: i64,
     pub channel_points: i64,
-    pub top_predictors: Vec<UserPredictionState>
+    pub top_predictors: Vec<UserPredictionState>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -40,11 +40,27 @@ pub struct PredictionState {
     pub outcomes: Vec<PredictionOutcomeState>,
     pub lock_time: DateTime<Utc>,
     pub status: PreditionStatus,
-    pub show_element: bool,
-    pub show_status: bool
 }
 
 impl PredictionState {
+    pub fn new(
+        id: String,
+        title: String,
+        winning_outcome_id: Option<String>,
+        outcomes: Vec<PredictionOutcomeState>,
+        lock_time: DateTime<Utc>,
+        status: PreditionStatus
+    ) -> Self {
+        PredictionState {
+            id,
+            title,
+            winning_outcome_id,
+            outcomes,
+            lock_time,
+            status,
+        }
+    }
+
     pub fn clone_with_empty_outcomes(&self) -> Self {
         return PredictionState {
             id: self.id.clone(),
@@ -53,8 +69,6 @@ impl PredictionState {
             outcomes: Default::default(),
             lock_time: self.lock_time.clone(),
             status: self.status.clone(),
-            show_element: self.show_element,
-            show_status: self.show_status
         }
     }
 
@@ -68,27 +82,67 @@ impl PredictionState {
     }
 }
 
+
+// had to split just the state and the ui part
+// because they work independently
+#[derive(Clone, Default, Debug, PartialEq)]
+pub struct PredUIState {
+    pub status: PreditionStatus,
+    pub show_element: bool,
+    pub show_status: bool
+}
+
+impl PredUIState {
+    pub fn new(status: PreditionStatus) -> Self {
+        PredUIState {
+            show_element: false,
+            show_status: true,
+            status
+        }
+    }
+}
+
+
 pub struct PredictionStateAnimator {
     prev_state: PredictionState,
     next_state: PredictionState,
 
     pub state_setter: UseStateSetter<PredictionState>,
+    pub show_element_setter: UseStateSetter<bool>,
+    pub show_status_setter: UseStateSetter<bool>,
+    pub status_setter: UseStateSetter<PreditionStatus>,
 
     timer: Rc<RefCell<f64>>,
-    animation_handle: Rc<RefCell<Option<Interval>>>
+
+    animation_handle: Rc<RefCell<Option<Interval>>>,
+    hide_element_handle: Rc<RefCell<Option<Timeout>>>,
+    show_status_handle: Rc<RefCell<Option<Timeout>>>
 }
 
 impl PredictionStateAnimator {
-    pub fn new(state_setter: UseStateSetter<PredictionState>, curr_state: &PredictionState) -> Self {
+    pub fn new(
+        state_setter: UseStateSetter<PredictionState>,
+        curr_state: &PredictionState,
+        show_element_setter: UseStateSetter<bool>,
+        show_status_setter: UseStateSetter<bool>,
+        status_setter: UseStateSetter<PreditionStatus>,
+    ) -> Self {
         Self {
             prev_state: curr_state.clone(),
             next_state: Default::default(),
             state_setter,
+            show_element_setter,
+            show_status_setter,
+            status_setter,
             timer: Default::default(),
-            animation_handle: Default::default()
+            animation_handle: Default::default(),
+            hide_element_handle: Default::default(),
+            show_status_handle: Default::default()
         }
     }
 
+    // we can't rely on UseState value, because it doesn't update without use_state func
+    // so we need curr_state from the called, that uses use_state
     pub fn set_state(&mut self, new_state: PredictionState, curr_state: &PredictionState) {
         self.prev_state = curr_state.clone();
         self.next_state = new_state;
@@ -102,7 +156,42 @@ impl PredictionStateAnimator {
             anim_handle.cancel();
         };
 
-        {
+        {         
+            // clear this timeout and show the element, since we've got a new state   
+            if let Some(element_handle) = self.hide_element_handle.take() {
+                element_handle.cancel();
+            }
+
+            self.show_element_setter.set(true);
+
+            // neatly transition react to status change
+            if self.prev_state.status != self.next_state.status {
+                if let Some(status_handle) = self.show_status_handle.take() {
+                    status_handle.cancel();
+                }
+
+                self.show_status_setter.set(false);
+
+                let show_status_setter = self.show_status_setter.clone();
+                let status_setter = self.status_setter.clone();
+                let next_status = self.next_state.status.clone();
+
+                self.show_status_handle.replace(Some(Timeout::new(500, move || {
+                    show_status_setter.set(true);
+                    status_setter.set(next_status);
+                })));
+            }
+
+            // gotta hide the element when prediction is finished, but only after a while
+            if self.next_state.status == PreditionStatus::Finished {
+                let show_element_setter = self.show_element_setter.clone();
+
+                self.hide_element_handle.replace(Some(Timeout::new(10_000, move || {
+                    show_element_setter.set(false);
+                })));
+            }
+
+            // and this is the part that manipulates stuff to animate from one value to new one
             let state_setter = self.state_setter.clone();
             let timer_ref = self.timer.clone();
             let anim_handle_ref = self.animation_handle.clone();
@@ -113,6 +202,7 @@ impl PredictionStateAnimator {
                 let mut timer_borrow = timer_ref.borrow_mut();
                 *timer_borrow += (GLOBAL_DELAY_VALUE_SECONDS as f64) / (FPS as f64);
 
+                // if time over the animation time - we're done
                 if *timer_borrow > (GLOBAL_DELAY_VALUE_SECONDS as f64) {
                     state_setter.set(next_state.clone());
                     if let Some(anim_handle) = anim_handle_ref.take() {
@@ -121,6 +211,8 @@ impl PredictionStateAnimator {
                     return;
                 }
 
+                // intermediate step will take everything from the next step, except stuff that
+                // has points in it, which is animated, calculated from the time, prev_state and next_state
                 let mut intermediate_state = next_state.clone_with_empty_outcomes();
 
                 for outcome in next_state.outcomes.iter() {

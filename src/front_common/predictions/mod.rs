@@ -3,4 +3,4 @@ mod state;
 pub mod components;
 
 pub use options::PredictionsSourceOptions;
-pub use state::{PredictionStateAnimator, PredictionState, PredictionOutcomeState, PreditionStatus};
+pub use state::{PredictionStateAnimator, PredictionState, PredictionOutcomeState, PreditionStatus, PredUIState};
