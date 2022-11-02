@@ -230,15 +230,15 @@ impl PredictionsSettingsState {
             outcomes: vec![
                 PredictionOutcomeState {
                     id: "1".to_string(),
-                    title: "Title1".to_string(),
-                    color: "".to_string(),
+                    title: "Very complicated long title to do a test".to_string(),
+                    color: "blue".to_string(),
                     users: 1,
                     channel_points: 10_000,
                     top_predictors: vec![],
                 }, PredictionOutcomeState {
                     id: "2".to_string(),
                     title: "Title2".to_string(),
-                    color: "".to_string(),
+                    color: "pink".to_string(),
                     users: 1,
                     channel_points: 20_000,
                     top_predictors: vec![],
@@ -277,8 +277,8 @@ impl PredictionsSettingsState {
                     vec![
                         PredictionOutcomeState {
                             id: "1".to_string(),
-                            title: "Title1".to_string(),
-                            color: "".to_string(),
+                            title: "Very complicated long title to do a test".to_string(),
+                            color: "blue".to_string(),
                             users: 1,
                             channel_points: opt1_p + 10_000,
                             top_predictors: vec![],
@@ -286,7 +286,7 @@ impl PredictionsSettingsState {
                         PredictionOutcomeState {
                             id: "2".to_string(),
                             title: "Title2".to_string(),
-                            color: "".to_string(),
+                            color: "pink".to_string(),
                             users: 1,
                             channel_points: opt2_p + 10_000,
                             top_predictors: vec![],
@@ -302,7 +302,7 @@ impl PredictionsSettingsState {
         html! {
             <>
                 <div style="height: 500px">
-                    <components::PredictionsList state={source_state} {show_status_state} {show_element_state} {status_state}/>
+                    <components::PredictionsList state={source_state} is_white={true} {show_status_state} {show_element_state} {status_state}/>
                 </div>
                 <button onclick={change_state_callback}>{"Test"}</button>
             </>
