@@ -1,3 +1,7 @@
 mod schema;
+mod state;
 
-pub use schema::twitch_users;
+use schema::twitch_users;
+use schema::auth_state;
+
+pub use state::AuthState;

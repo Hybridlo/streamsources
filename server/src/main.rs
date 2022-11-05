@@ -1,6 +1,7 @@
 mod db;
 mod util;
 mod errors;
+mod routes;
 mod twitch_api;
 
 use std::sync::Mutex;
@@ -23,6 +24,10 @@ pub use util::DbPool;
 pub use util::RedisPool;
 use errors::e500;
 use twitch_api::get_app_token;
+use routes::login_url;
+
+
+const SCOPES: [&str; 1] = ["channel:read:predictions"];
 
 #[get("/test")]
 async fn test(redis_pool: Data<RedisPool>, http_client: Data<reqwest::Client>) -> Result<impl Responder, actix_web::Error> {
@@ -59,6 +64,10 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(redis_pool.clone()))
             .app_data(Data::new(http_client.clone()))
             .service(test)
+            .service(
+                web::scope("/api")
+                    .route("/request_login", web::get().to(login_url))
+            )
             .default_service(Files::new("/", "./dist/").index_file("index.html").default_handler(
                 fn_service(
                     |req: ServiceRequest| async {
