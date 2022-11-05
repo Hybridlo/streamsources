@@ -56,6 +56,10 @@ impl AuthState {
         let mut rng = rand::thread_rng();
         let state_token: String = (0..STATE_LENGTH).map(|_| rng.sample(rand::distributions::Alphanumeric) as char).collect();
 
+        diesel::delete(auth_state::table)
+            .filter(auth_state::dsl::creation.lt(chrono::offset::Utc::now().naive_utc() - chrono::Duration::seconds(STATE_TIMEOUT_SECONDS)))
+            .execute(db_conn).await?;
+
         diesel::insert_into(auth_state::table)
             .values(&AuthStateNew { state: state_token.clone() })
             .execute(db_conn).await?;
