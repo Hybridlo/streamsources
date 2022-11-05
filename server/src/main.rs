@@ -19,13 +19,18 @@ use diesel_async::pooled_connection::deadpool::Pool;
 
 use twitch_sources_rework::MyTestStruct;
 
+pub use util::DbPool;
+pub use util::RedisPool;
+use errors::e500;
+use twitch_api::get_app_token;
+
 #[get("/test")]
-async fn test(db_pool: Data<Pool<AsyncPgConnection>>, session: Session) -> Result<impl Responder, actix_web::Error> {
-    db_pool.get().await.map_err(errors::e500)?;
+async fn test(redis_pool: Data<RedisPool>, http_client: Data<reqwest::Client>) -> Result<impl Responder, actix_web::Error> {
+    let token = get_app_token(&mut redis_pool.get().await.map_err(e500)?, &**http_client).await.map_err(e500)?;
 
     //session.insert("hi", "sup");
     
-    Ok("test success")
+    Ok(token)
 }
 
 #[actix_web::main]
@@ -42,6 +47,8 @@ async fn main() -> std::io::Result<()> {
     let redis_pool = util::get_redis_client_pool()
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
 
+    let http_client = reqwest::Client::new();
+
     let secret_key_val = std::env::var("SECRET").expect("SECRET must be set");
     let secret_key = Key::from(secret_key_val.as_bytes());
 
@@ -50,6 +57,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(SessionMiddleware::new(redis_session.clone(), secret_key.clone()))
             .app_data(Data::new(db_pool.clone()))
             .app_data(Data::new(redis_pool.clone()))
+            .app_data(Data::new(http_client.clone()))
             .service(test)
             .default_service(Files::new("/", "./dist/").index_file("index.html").default_handler(
                 fn_service(
