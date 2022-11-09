@@ -10,8 +10,11 @@ use actix_web::cookie::Key;
 use log::info;
 
 use actix_files::{Files, NamedFile};
-use actix_web::{get, web, web::Data, App, HttpResponse, HttpServer, Responder};
+use actix_web::{get, web::Data, App, HttpResponse, HttpServer, Responder};
 use actix_web::dev::{fn_service, ServiceResponse, ServiceRequest};
+use paperclip::actix::OpenApiExt;
+use paperclip::actix::web;
+use paperclip::actix::ResponderWrapper;
 
 use actix_session::{SessionMiddleware, Session};
 
@@ -29,7 +32,6 @@ use routes::login_url;
 
 const SCOPES: [&str; 1] = ["channel:read:predictions"];
 
-#[get("/test")]
 async fn test(redis_pool: Data<RedisPool>, http_client: Data<reqwest::Client>) -> Result<impl Responder, actix_web::Error> {
     let token = get_app_token(&mut redis_pool.get().await.map_err(e500)?, &**http_client).await.map_err(e500)?;
 
@@ -59,15 +61,17 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap_api()
             .wrap(SessionMiddleware::new(redis_session.clone(), secret_key.clone()))
             .app_data(Data::new(db_pool.clone()))
             .app_data(Data::new(redis_pool.clone()))
             .app_data(Data::new(http_client.clone()))
-            .service(test)
+            //.route("/test", web::get().to(test))
             .service(
                 web::scope("/api")
                     .route("/request_login", web::get().to(login_url))
             )
+            .with_json_spec_at("/api_spec/v2")
             .default_service(Files::new("/", "./dist/").index_file("index.html").default_handler(
                 fn_service(
                     |req: ServiceRequest| async {
@@ -78,6 +82,7 @@ async fn main() -> std::io::Result<()> {
                     }
                 )
             ))
+            .build()
     })
     .bind("127.0.0.1:8080")?
     .run()

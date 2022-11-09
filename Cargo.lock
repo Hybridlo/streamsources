@@ -331,6 +331,7 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "twitch-sources-client",
  "twitch-sources-rework",
  "wasm-bindgen",
  "wasm-logger",
@@ -1979,6 +1980,7 @@ dependencies = [
  "js-sys",
  "log",
  "mime",
+ "mime_guess",
  "native-tls",
  "once_cell",
  "percent-encoding",
@@ -2476,6 +2478,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 
 [[package]]
+name = "twitch-sources-client"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "twitch-sources-rework"
 version = "0.1.0"
 dependencies = [
@@ -2546,6 +2560,15 @@ dependencies = [
  "idna",
  "matches",
  "percent-encoding",
+]
+
+[[package]]
+name = "uuid"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "feb41e78f93363bb2df8b0e86a2ca30eed7806ea16ea0c790d757cf93f79be83"
+dependencies = [
+ "serde",
 ]
 
 [[package]]

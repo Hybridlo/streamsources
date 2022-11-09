@@ -1,0 +1,1 @@
+openapi-generator-cli.cmd generate -i v2.json -g rust -o ./twitch-sources-client/ -p packageName=twitch-sources-client,packageVersion=0.1.0
