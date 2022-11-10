@@ -10,12 +10,15 @@ Method | HTTP request | Description
 
 ## api_request_login_get
 
-> crate::models::LoginUrlResponse api_request_login_get()
+> crate::models::LoginUrlResponse api_request_login_get(callback_url)
 
 
 ### Parameters
 
-This endpoint does not need any parameter.
+
+Name | Type | Description  | Required | Notes
+------------- | ------------- | ------------- | ------------- | -------------
+**callback_url** | **String** |  | [required] |
 
 ### Return type
 

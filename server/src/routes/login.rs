@@ -1,6 +1,6 @@
-use actix_web::{web::{Data, Json}, Responder};
+use actix_web::web::{Data, Json, Query};
 use paperclip::actix::{Apiv2Schema, api_v2_operation};
-use serde::Serialize;
+use serde::{Serialize, Deserialize};
 
 use crate::e500;
 use crate::DbPool;
@@ -31,12 +31,16 @@ impl LoginUrlResponse {
     }
 }
 
+#[derive(Deserialize, Apiv2Schema)]
+pub struct LoginUrlRequest {
+    callback_url: String
+}
 #[api_v2_operation]
-pub async fn login_url(req: actix_web::HttpRequest, db_pool: Data<DbPool>) -> Result<Json<LoginUrlResponse>, actix_web::Error> {
+pub async fn login_url(request: Query<LoginUrlRequest>, db_pool: Data<DbPool>) -> Result<Json<LoginUrlResponse>, actix_web::Error> {
     let mut db_conn = db_pool.get().await.map_err(e500)?;
 
-    let full_uri = req.connection_info().scheme().to_string() + "://" + req.connection_info().host() + &req.uri().to_string();
-    let new_state = AuthState::get_new_state(&full_uri, &mut db_conn).await.map_err(e500)?;
+    let full_uri = &request.callback_url;
+    let new_state = AuthState::get_new_state(full_uri, &mut db_conn).await.map_err(e500)?;
 
-    Ok(Json(LoginUrlResponse::new(&full_uri, &new_state)))
+    Ok(Json(LoginUrlResponse::new(full_uri, &new_state)))
 }
