@@ -11,3 +11,9 @@ impl PartialEq for ClientConfig {
         self.config.base_path == other.config.base_path
     }
 }
+
+#[derive(Default, Store, Clone, PartialEq)]
+pub struct ErrorState {
+    pub show_error: bool,
+    pub error_message: String
+}

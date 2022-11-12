@@ -1,3 +1,4 @@
+mod util;
 mod state;
 mod components;
 
@@ -9,6 +10,8 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use components::*;
 use yewdux::prelude::use_store;
+
+const ERROR_MODAL: &str = "errorModal";
 
 #[function_component(App)]
 fn app() -> Html {
@@ -24,6 +27,7 @@ fn app() -> Html {
     html! {
         // wrap the whole app in router to have history context everywhere
         <BrowserRouter>
+            <ErrorModal elem_id={ERROR_MODAL.to_string()} />
             <Base />
         </BrowserRouter>
     }
