@@ -4,33 +4,28 @@ mod errors;
 mod routes;
 mod twitch_api;
 
-use std::sync::Mutex;
-
 use actix_web::cookie::Key;
 use log::info;
 
 use actix_files::{Files, NamedFile};
 use actix_web::{get, web::Data, App, HttpResponse, HttpServer, Responder};
+use actix_web::web as web_ax;
 use actix_web::dev::{fn_service, ServiceResponse, ServiceRequest};
 use paperclip::actix::OpenApiExt;
 use paperclip::actix::web;
-use paperclip::actix::ResponderWrapper;
 
 use actix_session::{SessionMiddleware, Session};
-
-use diesel_async::AsyncPgConnection;
-use diesel_async::pooled_connection::deadpool::Pool;
-
-use twitch_sources_rework::MyTestStruct;
 
 pub use util::DbPool;
 pub use util::RedisPool;
 use errors::e500;
 use twitch_api::get_app_token;
 use routes::login_url;
+use routes::twitch_login_end;
 
 
 const SCOPES: [&str; 1] = ["channel:read:predictions"];
+const REDIRECT_URL: &str = "/twitch_login/";
 
 async fn test(redis_pool: Data<RedisPool>, http_client: Data<reqwest::Client>) -> Result<impl Responder, actix_web::Error> {
     let token = get_app_token(&mut redis_pool.get().await.map_err(e500)?, &**http_client).await.map_err(e500)?;
@@ -83,8 +78,10 @@ async fn main() -> std::io::Result<()> {
                 )
             ))
             .build()
+            // i really don't know how else to exclude this from the schema
+            .route(REDIRECT_URL, web_ax::get().to(twitch_login_end))
     })
-    .bind("127.0.0.1:8080")?
+    .bind("127.0.0.1:80")?
     .run()
     .await
 }

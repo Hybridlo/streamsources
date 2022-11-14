@@ -15,23 +15,23 @@
 pub struct LoginUrlResponse {
     #[serde(rename = "client_id")]
     pub client_id: String,
-    #[serde(rename = "redirect_url")]
-    pub redirect_url: String,
+    #[serde(rename = "redirect_uri")]
+    pub redirect_uri: String,
     #[serde(rename = "response_type")]
     pub response_type: String,
-    #[serde(rename = "scopes")]
-    pub scopes: String,
+    #[serde(rename = "scope")]
+    pub scope: String,
     #[serde(rename = "state")]
     pub state: String,
 }
 
 impl LoginUrlResponse {
-    pub fn new(client_id: String, redirect_url: String, response_type: String, scopes: String, state: String) -> LoginUrlResponse {
+    pub fn new(client_id: String, redirect_uri: String, response_type: String, scope: String, state: String) -> LoginUrlResponse {
         LoginUrlResponse {
             client_id,
-            redirect_url,
+            redirect_uri,
             response_type,
-            scopes,
+            scope,
             state,
         }
     }

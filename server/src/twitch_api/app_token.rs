@@ -39,7 +39,7 @@ async fn new_token(redis_conn: &mut Connection, http_client: &reqwest::Client) -
     //panic if we can't get a new token
     let response = response.error_for_status().expect("Got an error request when trying to get a new token");
 
-    let resp_bytes = response.error_for_status()?.bytes().await?;
+    let resp_bytes = response.bytes().await?;
     let response = serde_json::de::from_slice::<NewTokenResponse>(&*resp_bytes)?;
 
     redis_conn.set("twitch_app_access_token", &response.access_token).await?;

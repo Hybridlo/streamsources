@@ -23,14 +23,14 @@ struct AuthStateNew {
 }
 
 #[derive(Serialize, Deserialize)]
-struct InfoData {
+pub struct InfoData {
     pub redirect_uri: String
 }
 
 impl AuthState {
     pub async fn check_state_and_get_data(check_state: &str, db_conn: &mut AsyncPgConnection) -> Result<InfoData> {
         if check_state.len() < STATE_LENGTH {
-            return Err(anyhow!("Invalid state"))
+            return Err(anyhow!("Login attempt invalid, use login with twitch button"))
         }
 
         let (auth_state, info_state) = check_state.split_at(STATE_LENGTH);
@@ -41,9 +41,9 @@ impl AuthState {
 
         match state {
             Some(state) => if (chrono::offset::Utc::now().naive_utc() - state.creation) > chrono::Duration::seconds(STATE_TIMEOUT_SECONDS) {
-                return Err(anyhow!("State has timed out"));
+                return Err(anyhow!("Login attempt has timed out, please try again"));
             }
-            None => return Err(anyhow!("State was not found")),
+            None => return Err(anyhow!("Login attempt was not found, make sure your login attempt came from this website")),
         }
 
         let info_state = base64::decode_config(info_state, base64::URL_SAFE_NO_PAD)?;
