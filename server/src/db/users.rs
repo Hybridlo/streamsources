@@ -1,9 +1,10 @@
 use diesel::prelude::*;
 use diesel_async::{AsyncPgConnection, RunQueryDsl};
 use serde::{Serialize, Deserialize};
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 
 use super::twitch_users;
+use crate::errors::e500;
 use crate::twitch_api::{TWITCH_API_AUTH, TWITCH_API_URI};
 use crate::REDIRECT_URL;
 
@@ -19,7 +20,7 @@ struct NewTwitchUser {
     broadcaster_type: String
 }
 
-#[derive(Queryable, Debug)]
+#[derive(Queryable, Identifiable, Debug)]
 pub struct TwitchUser {
     id: i64,
     username: String,
@@ -92,7 +93,8 @@ pub async fn update_or_create_and_get_user(
     
     let resp_bytes = response.bytes().await?;
     println!("{:?}", resp_bytes);
-    let auth_response = serde_json::de::from_slice::<AuthResponse>(&resp_bytes)?;
+    let mut auth_response = serde_json::de::from_slice::<AuthResponse>(&resp_bytes)?;
+    auth_response.scope.sort_unstable();
 
     let response = http_client.get(TWITCH_API_URI.to_string() + "/users")
         .header("Authorization", format!("Bearer {}", auth_response.access_token))
@@ -110,16 +112,26 @@ pub async fn update_or_create_and_get_user(
         .first::<TwitchUser>(db_conn)
         .await;
 
-    let user = match existing_user {
-        Ok(user) => user,
+    let mut user: TwitchUser = match existing_user {
+        Ok(user) => {
+            // user exists
+            diesel::update(&user)
+                .set((
+                    twitch_users::dsl::access_token.eq(auth_response.access_token),
+                    twitch_users::dsl::refresh_token.eq(auth_response.refresh_token),
+                ))
+                .get_result::<TwitchUser>(db_conn)
+                .await?
+        },
         Err(_) => {
+            // create a new user
             let new_user = NewTwitchUser {
                 id: user_id,
                 username: user_response.data[0].login.clone(),
                 access_token: auth_response.access_token,
                 refresh_token: auth_response.refresh_token,
                 expires_in: auth_response.expires_in,
-                scopes: auth_response.scope,
+                scopes: auth_response.scope.clone(),
                 broadcaster_type: user_response.data[0].broadcaster_type.clone(),
             };
 
@@ -128,6 +140,25 @@ pub async fn update_or_create_and_get_user(
                 .get_result::<TwitchUser>(db_conn).await?
         },
     };
+
+    if user.username != user_response.data[0].login {
+        // username update
+        user = diesel::update(&user)
+            .set(twitch_users::dsl::username.eq(&user_response.data[0].login))
+            .get_result::<TwitchUser>(db_conn)
+            .await?;
+    }
+
+    if
+        user.scopes.iter().all(|el| el.is_some())
+        // there's probably a better way to do this
+        && user.scopes.iter().map(|el| el.as_ref().unwrap()).collect::<Vec<_>>() != auth_response.scope.iter().collect::<Vec<_>>() {
+            // scope update
+            user = diesel::update(&user)
+                .set(twitch_users::dsl::scopes.eq(&auth_response.scope))
+                .get_result::<TwitchUser>(db_conn)
+                .await?;
+    }
 
     Ok(user)
 }

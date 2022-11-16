@@ -1,4 +1,5 @@
 use yew::prelude::*;
+use yew_router::prelude::use_location;
 use yew_hooks::use_async;
 use yewdux::prelude::use_store;
 
@@ -9,10 +10,20 @@ use crate::state::ErrorState;
 
 use web_sys::console::log_1;
 
+const TWITCH_AUTH_URL: &str = "https://id.twitch.tv/oauth2/authorize";
+
 #[function_component(LoginButton)]
 pub fn login_button() -> Html {
     let (client_config, _) = use_store::<ClientConfig>();
     let (_, error_state_setter) = use_store::<ErrorState>();
+    let location = match use_location() {
+        Some(location) => location,
+
+        // this shouldn't happen ever anyway, but just in case
+        None => return html! {
+            <span>{"An error occured while trying to get browser location API"}</span>
+        },
+    };
 
     let async_state = {
         let error_state_setter = error_state_setter.clone();
@@ -20,22 +31,25 @@ pub fn login_button() -> Html {
             let window = web_sys::window().unwrap();
             let location = window.location();
             let href = location.href().unwrap();
-
-            log_1(&"start".into());
             
             let res = api_request_login_get(&client_config.config, &href)
-                                                    .await.map_err(|err| err.to_string());
-            
-            log_1(&"end".into());
+                                                    .await;
             
             match res {
-                Ok(data) => log_1(&format!("{:?}", data).into()),
+                Ok(data) => {
+                    match serde_urlencoded::ser::to_string(data) {
+                        Ok(data_encoded) => {
+                            location.set_href(
+                                &(TWITCH_AUTH_URL.to_string()
+                                + "?"
+                                + &data_encoded)
+                            );
+                        }
+                        Err(err) => error_state_setter.reduce(|_| ErrorState { show_error: true, error_message: err.to_string() })
+                    }
+                },
                 Err(err) => {
-                    log_1(&"lol".into());
-
-                    log_1(&"here".into());
-
-                    error_state_setter.reduce(|_| ErrorState { show_error: true, error_message: err });
+                    error_state_setter.reduce(|_| ErrorState { show_error: true, error_message: err.to_string() });
                 }
             }
 

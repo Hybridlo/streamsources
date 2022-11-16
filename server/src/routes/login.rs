@@ -47,7 +47,7 @@ pub async fn login_url(request: HttpRequest, query: Query<LoginUrlRequest>, db_p
     let full_uri = &query.callback_url;
     let new_state = AuthState::get_new_state(full_uri, &mut db_conn).await.map_err(e500)?;
     
-    let host = request.connection_info().host().to_string();
+    let host = request.connection_info().scheme().to_string() + "://" + request.connection_info().host();
     Ok(Json(LoginUrlResponse::new(&host, &new_state)))
 }
 

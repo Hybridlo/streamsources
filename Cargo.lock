@@ -337,6 +337,7 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "serde_urlencoded",
  "twitch-sources-client",
  "twitch-sources-rework",
  "wasm-bindgen",
