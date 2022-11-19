@@ -25,12 +25,14 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*DefaultApi* | [**api_login_check_get**](docs/DefaultApi.md#api_login_check_get) | **GET** /api/login_check | 
 *DefaultApi* | [**api_request_login_get**](docs/DefaultApi.md#api_request_login_get) | **GET** /api/request_login | 
 
 
 ## Documentation For Models
 
  - [LoginUrlResponse](docs/LoginUrlResponse.md)
+ - [UserInfo](docs/UserInfo.md)
 
 
 To get access to the crate's generated documentation, use:

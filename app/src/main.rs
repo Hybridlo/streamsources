@@ -2,14 +2,13 @@ mod util;
 mod state;
 mod components;
 
-use anyhow::Result;
 use state::ClientConfig;
-use twitch_sources_rework::MyTestStruct;
-use twitch_sources_client::apis::configuration::Configuration;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use components::*;
 use yewdux::prelude::use_store;
+
+use web_sys::console::log_1;
 
 const ERROR_MODAL: &str = "errorModal";
 
@@ -22,6 +21,8 @@ fn app() -> Html {
         let location = window.location();
         let path = location.origin().unwrap();
         config.config.base_path = path;
+
+        log_1(&"Reduce mut on ClientConfig".into());
     });
 
     html! {

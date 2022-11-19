@@ -1,5 +1,4 @@
 use yew::prelude::*;
-use yew_router::prelude::use_location;
 use yew_hooks::use_async;
 use yewdux::prelude::use_store;
 
@@ -8,22 +7,12 @@ use twitch_sources_client::apis::default_api::api_request_login_get;
 use crate::state::ClientConfig;
 use crate::state::ErrorState;
 
-use web_sys::console::log_1;
-
 const TWITCH_AUTH_URL: &str = "https://id.twitch.tv/oauth2/authorize";
 
 #[function_component(LoginButton)]
 pub fn login_button() -> Html {
     let (client_config, _) = use_store::<ClientConfig>();
     let (_, error_state_setter) = use_store::<ErrorState>();
-    let location = match use_location() {
-        Some(location) => location,
-
-        // this shouldn't happen ever anyway, but just in case
-        None => return html! {
-            <span>{"An error occured while trying to get browser location API"}</span>
-        },
-    };
 
     let async_state = {
         let error_state_setter = error_state_setter.clone();
@@ -65,7 +54,7 @@ pub fn login_button() -> Html {
     };
 
     html! {
-        <button onclick={button_onclick} disabled={async_state.loading} type="button" class="btn ms-auto login-button">
+        <button onclick={button_onclick} disabled={async_state.loading} type="button" class="btn login-button">
             { "Login with Twitch" }
         </button>
     }

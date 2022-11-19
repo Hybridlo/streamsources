@@ -5,12 +5,13 @@ use actix_web::web::{Data, Json, Query};
 use paperclip::actix::{Apiv2Schema, api_v2_operation};
 use serde::{Serialize, Deserialize};
 
-use crate::e500;
+use crate::errors::{e500, MyErrors};
 use crate::DbPool;
 use crate::SCOPES;
 use crate::REDIRECT_URL;
 use crate::db::AuthState;
-use crate::db::update_or_create_and_get_user;
+use crate::db::TwitchUser;
+use crate::util::session_state::TypedSession;
 
 
 #[derive(Serialize, Apiv2Schema)]
@@ -61,6 +62,7 @@ pub struct LoginEndQuery {
 pub async fn twitch_login_end(
     request: HttpRequest,
     query: Query<LoginEndQuery>,
+    session: TypedSession,
     db_pool: Data<DbPool>,
     http_client: Data<reqwest::Client>
 ) -> Result<HttpResponse, actix_web::Error> {
@@ -73,10 +75,12 @@ pub async fn twitch_login_end(
 
     match data {
         Ok(data) => {
-            let user = update_or_create_and_get_user(&query.code, &host, &http_client, &mut db_conn)
+            let user = TwitchUser::update_or_create_and_get_user(&query.code, &host, &http_client, &mut db_conn)
                 .await.map_err(e500)?;
 
-            println!("{:?}", user);
+            session.renew();
+            // TODO: this isn't an e500, placeholder for now
+            session.insert_user_id(user.id).map_err(e500)?;
 
             response.status(StatusCode::SEE_OTHER);
             response.append_header((
@@ -95,5 +99,27 @@ pub async fn twitch_login_end(
             ));
             Ok(response.body(err.to_string()))
         },
+    }
+}
+
+#[derive(Serialize, Apiv2Schema)]
+pub struct UserInfo {
+    username: String
+}
+#[api_v2_operation]
+pub async fn login_check(session: TypedSession, db_pool: Data<DbPool>) -> Result<Json<UserInfo>, MyErrors> {
+    let mut db_conn = db_pool.get()
+        .await
+        .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;
+
+    match session.get_user_id().map_err(|err| MyErrors::InternalServerError(err.to_string()))? {
+        Some(user_id) => {
+            let username = TwitchUser::get_user(user_id, &mut db_conn)
+                .await
+                .map_err(|err| MyErrors::InternalServerError(err.to_string()))?
+                .ok_or(MyErrors::AccessDenied)?.username;
+            Ok(Json(UserInfo { username }))
+        },
+        None => Err(MyErrors::AccessDenied),
     }
 }

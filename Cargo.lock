@@ -334,6 +334,7 @@ dependencies = [
  "chrono",
  "getrandom",
  "gloo-timers",
+ "http",
  "log",
  "serde",
  "serde_json",
@@ -1679,6 +1680,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0bee516533b655ba63e41e788b49a2beb1139e1eebafb143e7cb56b8cabb5da1"
 dependencies = [
+ "actix-session",
  "actix-web",
  "indexmap",
  "mime",

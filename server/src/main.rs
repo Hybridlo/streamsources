@@ -5,35 +5,25 @@ mod routes;
 mod twitch_api;
 
 use actix_web::cookie::Key;
-use log::info;
 
 use actix_files::{Files, NamedFile};
-use actix_web::{get, web::Data, App, HttpResponse, HttpServer, Responder};
+use actix_web::{web::Data, App, HttpServer};
 use actix_web::web as web_ax;
 use actix_web::dev::{fn_service, ServiceResponse, ServiceRequest};
 use paperclip::actix::OpenApiExt;
 use paperclip::actix::web;
 
-use actix_session::{SessionMiddleware, Session};
+use actix_session::SessionMiddleware;
 
 pub use util::DbPool;
 pub use util::RedisPool;
-use errors::e500;
-use twitch_api::get_app_token;
 use routes::login_url;
+use routes::login_check;
 use routes::twitch_login_end;
 
 
 const SCOPES: [&str; 1] = ["channel:read:predictions"];
 const REDIRECT_URL: &str = "/twitch_login/";
-
-async fn test(redis_pool: Data<RedisPool>, http_client: Data<reqwest::Client>) -> Result<impl Responder, actix_web::Error> {
-    let token = get_app_token(&mut redis_pool.get().await.map_err(e500)?, &**http_client).await.map_err(e500)?;
-
-    //session.insert("hi", "sup");
-    
-    Ok(token)
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -65,6 +55,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("/api")
                     .route("/request_login", web::get().to(login_url))
+                    .route("/login_check", web::get().to(login_check))
             )
             .with_json_spec_at("/api_spec/v2")
             .default_service(Files::new("/", "./dist/").index_file("index.html").default_handler(

@@ -17,3 +17,14 @@ pub struct ErrorState {
     pub show_error: bool,
     pub error_message: String
 }
+
+#[derive(Clone, PartialEq)]
+pub struct LoginInfo {
+    pub username: String
+}
+
+#[derive(Default, Store, Clone, PartialEq)]
+pub struct LoginState {
+    pub info: Option<LoginInfo>,
+    pub last_check: chrono::NaiveDateTime
+}
