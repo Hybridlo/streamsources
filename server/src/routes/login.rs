@@ -5,6 +5,7 @@ use actix_web::web::{Data, Json, Query};
 use paperclip::actix::{Apiv2Schema, api_v2_operation};
 use serde::{Serialize, Deserialize};
 
+use crate::db::LoginToken;
 use crate::errors::{e500, MyErrors};
 use crate::DbPool;
 use crate::SCOPES;
@@ -122,4 +123,26 @@ pub async fn login_check(session: TypedSession, db_pool: Data<DbPool>) -> Result
         },
         None => Err(MyErrors::AccessDenied),
     }
+}
+
+#[derive(Serialize, Apiv2Schema)]
+pub struct LoginTokenResponse {
+    token: String
+}
+#[api_v2_operation]
+pub async fn generate_login_token(session: TypedSession, db_pool: Data<DbPool>) -> Result<Json<LoginTokenResponse>, MyErrors> {
+    let mut db_conn = db_pool.get()
+        .await
+        .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;
+
+    let user_id = session
+        .get_user_id()
+        .map_err(|err| MyErrors::InternalServerError(err.to_string()))?
+        .ok_or(MyErrors::AccessDenied)?;
+
+    let token = LoginToken::create_login_token(user_id, &mut db_conn)
+        .await
+        .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;
+
+    Ok(Json(LoginTokenResponse { token }))
 }

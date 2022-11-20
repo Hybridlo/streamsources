@@ -4,9 +4,35 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
+[**api_generate_login_token_get**](DefaultApi.md#api_generate_login_token_get) | **GET** /api/generate_login_token | 
 [**api_login_check_get**](DefaultApi.md#api_login_check_get) | **GET** /api/login_check | 
 [**api_request_login_get**](DefaultApi.md#api_request_login_get) | **GET** /api/request_login | 
 
+
+
+## api_generate_login_token_get
+
+> crate::models::LoginTokenResponse api_generate_login_token_get()
+
+
+### Parameters
+
+This endpoint does not need any parameter.
+
+### Return type
+
+[**crate::models::LoginTokenResponse**](LoginTokenResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
 
 
 ## api_login_check_get

@@ -17,10 +17,6 @@ use actix_session::SessionMiddleware;
 
 pub use util::DbPool;
 pub use util::RedisPool;
-use routes::login_url;
-use routes::login_check;
-use routes::twitch_login_end;
-
 
 const SCOPES: [&str; 1] = ["channel:read:predictions"];
 const REDIRECT_URL: &str = "/twitch_login/";
@@ -54,8 +50,9 @@ async fn main() -> std::io::Result<()> {
             //.route("/test", web::get().to(test))
             .service(
                 web::scope("/api")
-                    .route("/request_login", web::get().to(login_url))
-                    .route("/login_check", web::get().to(login_check))
+                    .route("/request_login", web::get().to(routes::login_url))
+                    .route("/login_check", web::get().to(routes::login_check))
+                    .route("/generate_login_token", web::get().to(routes::generate_login_token))
             )
             .with_json_spec_at("/api_spec/v2")
             .default_service(Files::new("/", "./dist/").index_file("index.html").default_handler(
@@ -70,7 +67,7 @@ async fn main() -> std::io::Result<()> {
             ))
             .build()
             // i really don't know how else to exclude this from the schema
-            .route(REDIRECT_URL, web_ax::get().to(twitch_login_end))
+            .route(REDIRECT_URL, web_ax::get().to(routes::twitch_login_end))
     })
     .bind("127.0.0.1:80")?
     .run()

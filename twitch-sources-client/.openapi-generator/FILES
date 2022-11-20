@@ -3,6 +3,7 @@
 Cargo.toml
 README.md
 docs/DefaultApi.md
+docs/LoginTokenResponse.md
 docs/LoginUrlResponse.md
 docs/UserInfo.md
 git_push.sh
@@ -10,6 +11,7 @@ src/apis/configuration.rs
 src/apis/default_api.rs
 src/apis/mod.rs
 src/lib.rs
+src/models/login_token_response.rs
 src/models/login_url_response.rs
 src/models/mod.rs
 src/models/user_info.rs
