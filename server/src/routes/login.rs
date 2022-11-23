@@ -5,13 +5,13 @@ use actix_web::web::{Data, Json, Query};
 use paperclip::actix::{Apiv2Schema, api_v2_operation};
 use serde::{Serialize, Deserialize};
 
-use crate::db::LoginToken;
 use crate::errors::{e500, MyErrors};
 use crate::DbPool;
 use crate::SCOPES;
 use crate::REDIRECT_URL;
 use crate::db::AuthState;
 use crate::db::TwitchUser;
+use crate::db::LoginToken;
 use crate::util::session_state::TypedSession;
 
 
@@ -60,6 +60,7 @@ pub struct LoginEndQuery {
     code: String,
     //scopes: String
 }
+#[api_v2_operation(skip)]
 pub async fn twitch_login_end(
     request: HttpRequest,
     query: Query<LoginEndQuery>,

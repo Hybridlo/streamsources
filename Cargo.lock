@@ -1680,6 +1680,7 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0bee516533b655ba63e41e788b49a2beb1139e1eebafb143e7cb56b8cabb5da1"
 dependencies = [
+ "actix-files",
  "actix-session",
  "actix-web",
  "indexmap",
@@ -1859,6 +1860,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b845d6d8ec554f972a2c5298aad68953fd64e7441e846075450b44656a016d1"
 dependencies = [
  "vcpkg",
+]
+
+[[package]]
+name = "predictions-pie"
+version = "0.1.0"
+dependencies = [
+ "wasm-logger",
+ "yew",
 ]
 
 [[package]]

@@ -24,6 +24,6 @@ reqwest = "0.11"
 redis = { version = "0.22", features = ["aio"] }
 deadpool-redis = "0.11.0"
 chrono = "0.4"
-paperclip = { version = "0.7", features = ["actix4", "v3", "actix-session"] }
+paperclip = { version = "0.7", features = ["actix4", "v3", "actix-session", "actix-files"] }
 base64 = "0.13"
 rand = "0.8"

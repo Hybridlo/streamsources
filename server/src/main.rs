@@ -8,7 +8,6 @@ use actix_web::cookie::Key;
 
 use actix_files::{Files, NamedFile};
 use actix_web::{web::Data, App, HttpServer};
-use actix_web::web as web_ax;
 use actix_web::dev::{fn_service, ServiceResponse, ServiceRequest};
 use paperclip::actix::OpenApiExt;
 use paperclip::actix::web;
@@ -54,7 +53,10 @@ async fn main() -> std::io::Result<()> {
                     .route("/login_check", web::get().to(routes::login_check))
                     .route("/generate_login_token", web::get().to(routes::generate_login_token))
             )
+            .route(REDIRECT_URL, web::get().to(routes::twitch_login_end))
             .with_json_spec_at("/api_spec/v2")
+            .build()
+            .service(Files::new("/sources", "./sources/").index_file("index.html"))
             .default_service(Files::new("/", "./dist/").index_file("index.html").default_handler(
                 fn_service(
                     |req: ServiceRequest| async {
@@ -65,9 +67,6 @@ async fn main() -> std::io::Result<()> {
                     }
                 )
             ))
-            .build()
-            // i really don't know how else to exclude this from the schema
-            .route(REDIRECT_URL, web_ax::get().to(routes::twitch_login_end))
     })
     .bind("127.0.0.1:80")?
     .run()
