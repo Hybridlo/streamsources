@@ -2,11 +2,13 @@ mod db;
 mod util;
 mod errors;
 mod routes;
+mod websockets;
 mod twitch_api;
 
 use actix_web::cookie::Key;
 
 use actix_files::{Files, NamedFile};
+use actix_web::web as web_ax;
 use actix_web::{web::Data, App, HttpServer};
 use actix_web::dev::{fn_service, ServiceResponse, ServiceRequest};
 use paperclip::actix::OpenApiExt;
@@ -46,7 +48,6 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(db_pool.clone()))
             .app_data(Data::new(redis_pool.clone()))
             .app_data(Data::new(http_client.clone()))
-            //.route("/test", web::get().to(test))
             .service(
                 web::scope("/api")
                     .route("/request_login", web::get().to(routes::login_url))
@@ -56,6 +57,16 @@ async fn main() -> std::io::Result<()> {
             .route(REDIRECT_URL, web::get().to(routes::twitch_login_end))
             .with_json_spec_at("/api_spec/v2")
             .build()
+            // after openapi generation
+            
+            .service(
+                web_ax::scope("/ws")
+                    .service(
+                        // i don't need two scopes now, but just in case
+                        web_ax::scope("/sources")
+                            .route("/predictions", web_ax::get().to(websockets::predictions_websocket))
+                    )
+            )
             .service(Files::new("/sources", "./sources/").index_file("index.html"))
             .default_service(Files::new("/", "./dist/").index_file("index.html").default_handler(
                 fn_service(

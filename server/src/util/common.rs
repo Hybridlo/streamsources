@@ -44,3 +44,10 @@ pub fn get_redis_client_pool() -> Result<RedisPool> {
 
     Ok(pool)
 }
+
+pub async fn get_redis_connection() -> Result<redis::aio::Connection> {
+    let redis_url = env::var("REDIS_URL")?;
+    let client = redis::Client::open(redis_url)?;
+
+    Ok(client.get_async_connection().await?)
+}
