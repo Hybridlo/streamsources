@@ -6,6 +6,7 @@ use actix_web::{FromRequest, HttpRequest};
 use paperclip::actix::OperationModifier;
 use paperclip::v2::schema::TypedData;
 use std::future::{Ready, ready};
+
 pub struct TypedSession(Session);
 
 impl TypedSession {

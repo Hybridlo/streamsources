@@ -92,7 +92,6 @@ impl TwitchUser {
             .await?;
         
         let resp_bytes = response.bytes().await?;
-        println!("{:?}", resp_bytes);
         let mut auth_response = serde_json::de::from_slice::<AuthResponse>(&resp_bytes)?;
         auth_response.scope.sort_unstable();
 
@@ -149,8 +148,7 @@ impl TwitchUser {
                 .await?;
         }
 
-        if
-            user.scopes.iter().all(|el| el.is_some())
+        if  user.scopes.iter().all(|el| el.is_some())
             // there's probably a better way to do this
             && user.scopes.iter().map(|el| el.as_ref().unwrap()).collect::<Vec<_>>() != auth_response.scope.iter().collect::<Vec<_>>() {
                 // scope update

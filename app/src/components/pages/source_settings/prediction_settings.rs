@@ -1,21 +1,63 @@
+use std::str::FromStr;
 use std::{rc::Rc, cell::RefCell};
 
 use chrono::Duration;
-use wasm_bindgen::JsValue;
+use wasm_bindgen::{JsValue, JsCast};
 use gloo_timers::callback::Timeout;
 use yew::use_state;
 use yew::prelude::*;
 use yew_hooks::prelude::use_clipboard;
 use chrono::offset::Utc;
 
+use web_sys::{HtmlSelectElement, HtmlOptionElement};
+use web_sys::console::log_1;
+
 use twitch_sources_rework::front_common::SourceColor;
 use twitch_sources_rework::front_common::predictions::*;
+
+#[derive(Default, Clone, PartialEq, Debug)]
+pub enum PredictionSkins {
+    #[default]
+    Pie
+}
+
+impl ToString for PredictionSkins {
+    fn to_string(&self) -> String {
+        match self {
+            PredictionSkins::Pie => "Pie".to_string()            
+        }
+    }
+}
+
+impl FromStr for PredictionSkins {
+    type Err = JsValue;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Pie" => Ok(Self::Pie),
+            _ => Err("Select contained invalid value".into())
+        }
+    }
+}
+
+impl PredictionSkins {
+    fn all_options() -> Vec<Self> {
+        vec![Self::Pie]
+    }
+
+    fn to_source_name(&self) -> String {
+        match self {
+            PredictionSkins::Pie => "pie".to_string()
+        }
+    }
+}
 
 #[derive(Default)]
 pub struct PredictionsSettingsState {
     options: PredictionsSourceOptions,
     copy_timer: Rc<RefCell<Option<Timeout>>>,
     copy_button_text: String,
+    skin: PredictionSkins
 }
 
 impl PredictionsSettingsState {
@@ -34,6 +76,7 @@ impl PredictionsSettingsState {
             options: self.options.with_color(color),
             copy_timer: self.copy_timer.clone(),
             copy_button_text: self.copy_button_text.clone(),
+            skin: self.skin.clone(),
             ..*self
         }
     }
@@ -43,6 +86,7 @@ impl PredictionsSettingsState {
             options: self.options.with_is_expanded(is_expanded),
             copy_timer: self.copy_timer.clone(),
             copy_button_text: self.copy_button_text.clone(),
+            skin: self.skin.clone(),
             ..*self
         }
     }
@@ -51,6 +95,7 @@ impl PredictionsSettingsState {
         Self {
             copy_timer: Rc::new(RefCell::new(Some(copy_timer))),
             copy_button_text: self.copy_button_text.clone(),
+            skin: self.skin.clone(),
             ..*self
         }
     }
@@ -59,6 +104,16 @@ impl PredictionsSettingsState {
         Self {
             copy_button_text: new_text,
             copy_timer: self.copy_timer.clone(),
+            skin: self.skin.clone(),
+            ..*self
+        }
+    }
+
+    pub fn with_skin(&self, skin: PredictionSkins) -> Self {
+        Self {
+            copy_timer: self.copy_timer.clone(),
+            copy_button_text: self.copy_button_text.clone(),
+            skin,
             ..*self
         }
     }
@@ -164,10 +219,53 @@ impl PredictionsSettingsState {
         }
     }
 
+    fn render_skin_options(state: &UseStateHandle<PredictionsSettingsState>) -> Html {
+        let select_ref = use_node_ref();
+
+        let onchange = {
+            let state = state.clone();
+            let select_ref = select_ref.clone();
+
+            Callback::from(move |_| {
+                let select = select_ref.cast::<HtmlSelectElement>();
+
+                if let Some(select) = select {
+                    let selected_skin = select
+                        .selected_options()
+                        .item(0)
+                        .expect("msg")
+                        .unchecked_into::<HtmlOptionElement>()
+                        .value()
+                        .parse::<PredictionSkins>();
+
+                    if let Ok(selected_skin) = selected_skin {
+                        log_1(&format!("{:?}", selected_skin).into());
+                        state.with_skin(selected_skin);
+                    }
+                }
+            })
+        };
+
+        html! {
+            <>
+                <h5 class="container text-center my-2">{ "Choose source appearance" }</h5>
+                <select class="form-select" ref={select_ref} {onchange}>
+                    {
+                        PredictionSkins::all_options().into_iter().map(|skin| {
+                            html! {
+                                <option selected={skin == state.skin}>{ skin.to_string() }</option>
+                            }
+                        }).collect::<Html>()
+                    }
+                </select>
+            </>
+        }
+    }
+
     fn render_copy_button(state: &UseStateHandle<PredictionsSettingsState>) -> Result<Html, JsValue> {
         let window = web_sys::window().ok_or_else(|| JsValue::from_str("Could not get window"))?;
         let location = window.location();
-        let href = location.href()?;
+        let href = location.protocol()? + "//" + &location.host()?;
 
         let clipboard_handle = use_clipboard();
 
@@ -179,9 +277,10 @@ impl PredictionsSettingsState {
                 let href = href.clone();
                 
                 clipboard_handle.write_text(
-                        href
+                        href + "/sources"
                         + "/" + PredictionsSettingsState::get_source_endpoint()
-                        + "?" + state.options.item_to_params().as_str()
+                        + "/" + &state.skin.to_source_name()
+                        + "?" + &state.options.item_to_params()
                 );
 
                 if let Some(copy_timer) = (*state.copy_timer).take() {
@@ -209,9 +308,10 @@ impl PredictionsSettingsState {
                 <div class="container input-group mb-3">
                     <input id="srcLink" type="text" class="form-control text-center" readonly=true aria-label="Source link" aria-describedby="button-addon2"
                         placeholder={
-                            href.clone()
+                            href.clone() + "/sources"
                             + "/" + PredictionsSettingsState::get_source_endpoint()
-                            + "?" + state.options.item_to_params().as_str()
+                            + "/" + &state.skin.to_source_name()
+                            + "?" + &state.options.item_to_params()
                         }
                     />
                     <button class="btn btn-outline-secondary" type="button" id="srcCopy"
@@ -319,6 +419,7 @@ impl PredictionsSettingsState {
                     <div class="row gx-3">
                         { PredictionsSettingsState::render_color_options(&state) }
                         { PredictionsSettingsState::render_expand_options(&state) }
+                        { PredictionsSettingsState::render_skin_options(&state) }
                     </div>
                 </div>
                 { PredictionsSettingsState::render_copy_button(&state)? }

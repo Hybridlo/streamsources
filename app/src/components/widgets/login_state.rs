@@ -28,8 +28,6 @@ pub fn login_state() -> Html {
     let async_state = {
         let login_state_setter = login_state_setter.clone();
         use_async::<_, (), ()>(async move {
-            // so this is needed, because otherwise this will be called in a loop
-            // of state change -> component rerender -> state change -> ...
             let res = api_login_check_get(&client_config.config).await;
 
             match res {

@@ -1,4 +1,3 @@
-use web_sys::console::log_1;
 use yew::prelude::*;
 use yewdux::prelude::use_store;
 
@@ -34,10 +33,8 @@ pub fn error_modal(props: &ErrorModalProps) -> Html {
 
             if let Some(modal) = &*modal_state {
                 if error_state.show_error {
-                    log_1(&"trued".into());
                     modal.show();
                 } else {
-                    log_1(&"falsed".into());
                     modal.hide();
                 }
             }
