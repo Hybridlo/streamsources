@@ -1,0 +1,4 @@
+[build]
+target = "./index.html"
+dist = "../sources/predictions/list/"
+public_url = "/sources/predictions/list/"

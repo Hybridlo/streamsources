@@ -18,13 +18,13 @@ use twitch_sources_rework::front_common::predictions::*;
 #[derive(Default, Clone, PartialEq, Debug)]
 pub enum PredictionSkins {
     #[default]
-    Pie
+    List
 }
 
 impl ToString for PredictionSkins {
     fn to_string(&self) -> String {
         match self {
-            PredictionSkins::Pie => "Pie".to_string()            
+            PredictionSkins::List => "List".to_string()            
         }
     }
 }
@@ -34,7 +34,7 @@ impl FromStr for PredictionSkins {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "Pie" => Ok(Self::Pie),
+            "List" => Ok(Self::List),
             _ => Err("Select contained invalid value".into())
         }
     }
@@ -42,12 +42,12 @@ impl FromStr for PredictionSkins {
 
 impl PredictionSkins {
     fn all_options() -> Vec<Self> {
-        vec![Self::Pie]
+        vec![Self::List]
     }
 
     fn to_source_name(&self) -> String {
         match self {
-            PredictionSkins::Pie => "pie".to_string()
+            PredictionSkins::List => "list".to_string()
         }
     }
 }

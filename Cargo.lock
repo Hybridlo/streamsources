@@ -1934,7 +1934,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "predictions-pie"
+name = "predictions-list"
 version = "0.1.0"
 dependencies = [
  "wasm-logger",
