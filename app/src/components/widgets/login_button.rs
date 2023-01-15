@@ -28,7 +28,7 @@ pub fn login_button() -> Html {
                 Ok(data) => {
                     match serde_urlencoded::ser::to_string(data) {
                         Ok(data_encoded) => {
-                            location.set_href(
+                            let _ = location.set_href(
                                 &(TWITCH_AUTH_URL.to_string()
                                 + "?"
                                 + &data_encoded)

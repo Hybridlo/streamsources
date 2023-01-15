@@ -1,18 +1,13 @@
 use yew::prelude::*;
 use yew_hooks::use_measure;
-use web_sys::HtmlElement;
 
 pub fn scalable_wrapper(content: Html) -> Html {
     let parent_node = use_node_ref();
     let node = use_node_ref();
-    let state = use_measure(parent_node.clone());
-    let mut width_scale = 1.0;
-    let mut height_scale = 1.0;
-
-    if let Some(node) = node.cast::<HtmlElement>() {
-        width_scale = state.width / (node.offset_width() as f64);
-        height_scale = state.height / (node.offset_height() as f64);
-    }
+    let parent_size = use_measure(parent_node.clone());
+    let node_size = use_measure(node.clone());
+    let width_scale = parent_size.width / (node_size.width as f64);
+    let height_scale = parent_size.height / (node_size.height as f64);
 
     html! {
         <div ref={parent_node} style={"height: 100%; text-align: center;"}>

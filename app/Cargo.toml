@@ -24,3 +24,5 @@ chrono = { version = "0.4", features = ["wasmbind"] }
 yewdux = "0.8"
 serde_urlencoded = "0.7"
 http = "0.2.8"
+yew-style-in-rs = "0.4.1"
+strum = { version = "0.24.1", features = ["derive"] }

@@ -2,7 +2,7 @@ use yew::prelude::*;
 use yew_style_in_rs::style;
 
 use super::super::state::{PredictionState, PreditionStatus};
-use crate::front_common::scalable_wrapper;
+use crate::front_common::{scalable_wrapper, predictions::PredictionsProps};
 
 fn title(title: &str) -> Html {
     html! {
@@ -38,17 +38,8 @@ fn options_list(state: &PredictionState) -> Html {
     }
 }
 
-#[derive(PartialEq, Properties)]
-pub struct ListProps {
-    pub is_white: bool,
-    pub state: UseStateHandle<PredictionState>,
-    pub show_element_state: UseStateHandle<bool>,
-    pub show_status_state: UseStateHandle<bool>,
-    pub status_state: UseStateHandle<PreditionStatus>,
-}
-
 #[function_component(PredictionsList)]
-pub fn predictions_list(props: &ListProps) -> Html {
+pub fn predictions_list(props: &PredictionsProps) -> Html {
     let outline_color = if props.is_white { "white" } else { "black" };
     let outline_color_opposite = if props.is_white { "black" } else { "white" };
 

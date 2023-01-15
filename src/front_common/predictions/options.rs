@@ -1,6 +1,11 @@
+use serde::{Serialize, Deserialize};
+use yew::{Properties, UseStateHandle};
+
 use crate::front_common::SourceColor;
 
-#[derive(Default, Clone, Copy)]
+use super::{PredictionState, PreditionStatus};
+
+#[derive(Default, Clone, Copy, Serialize, Deserialize, Debug)]
 pub struct PredictionsSourceOptions {
     pub color: SourceColor,
     pub is_expanded: bool
@@ -24,24 +29,14 @@ impl PredictionsSourceOptions {
             ..*self
         }
     }
+}
 
-    pub fn item_to_params(&self) -> String {
-        let mut res = String::new();
-
-        match self.color {
-            SourceColor::White => res += "color=white",
-            SourceColor::Black => res += "color=black",
-        };
-
-        if self.is_expanded { res += "&expanded=yes" }
-
-        return res;
-    }
-
-    pub fn params_to_items(params: &str) -> Self {
-        Self {
-            color: if params.contains("color=white") { SourceColor::White } else { Default::default() },
-            is_expanded: if params.contains("expanded=yes") { true } else { Default::default() }
-        }
-    }
+#[derive(PartialEq, Properties)]
+pub struct PredictionsProps {
+    pub is_white: bool,
+    pub is_maximized: bool,
+    pub state: UseStateHandle<PredictionState>,
+    pub show_element_state: UseStateHandle<bool>,
+    pub show_status_state: UseStateHandle<bool>,
+    pub status_state: UseStateHandle<PreditionStatus>,
 }
