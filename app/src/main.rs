@@ -8,8 +8,6 @@ use yew_router::prelude::*;
 use components::*;
 use yewdux::prelude::use_store;
 
-use web_sys::console::log_1;
-
 const ERROR_MODAL: &str = "errorModal";
 
 #[function_component(App)]
@@ -21,8 +19,6 @@ fn app() -> Html {
         let location = window.location();
         let path = location.origin().unwrap();
         config.config.base_path = path;
-
-        log_1(&"Reduce mut on ClientConfig".into());
     });
 
     html! {

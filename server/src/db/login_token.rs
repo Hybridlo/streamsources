@@ -46,7 +46,7 @@ impl LoginToken {
 
         match login_token_item {
             Some(login_token_item_value) => {
-                if chrono::offset::Utc::now().naive_utc() - login_token_item_value.creation > chrono::Duration::seconds(TOKEN_TIMEOUT) {
+                if chrono::offset::Utc::now().naive_utc() - login_token_item_value.creation < chrono::Duration::seconds(TOKEN_TIMEOUT) {
                     Ok(login_token_item_value.user_id)
                 } else {
                     Err(anyhow!("Token timed out"))

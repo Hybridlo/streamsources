@@ -4,7 +4,7 @@ use yew_router::prelude::*;
 use crate::components::containers::Header;
 use super::Index;
 use super::Page404;
-use super::source_settings::PredictionsSettings;
+use super::PredictionsSettings;
 //use twitch_sources_rework::front_common::predictions::components::PredictionsPie;
 
 #[derive(Clone, Routable, PartialEq, Copy)]

@@ -45,7 +45,7 @@ impl TypedData for TypedSession {
 }
 
 impl OperationModifier for TypedSession {
-    // everything is no-op for a session
+    // everything is no-op in openapi gen for a session
     fn update_parameter(_op: &mut paperclip::v2::models::DefaultOperationRaw) {}
 
     fn update_response(_op: &mut paperclip::v2::models::DefaultOperationRaw) {}

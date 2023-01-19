@@ -4,6 +4,7 @@ mod errors;
 mod routes;
 mod websockets;
 mod twitch_api;
+mod middlewares;
 
 use actix_web::cookie::Key;
 
@@ -67,6 +68,7 @@ async fn main() -> std::io::Result<()> {
                             .route("/predictions", web_ax::get().to(websockets::predictions_websocket))
                     )
             )
+            .wrap(middlewares::QuickLoginFactory)
             .service(Files::new("/sources", "./sources/").index_file("index.html"))
             .default_service(Files::new("/", "./dist/").index_file("index.html").default_handler(
                 fn_service(
