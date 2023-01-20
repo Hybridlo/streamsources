@@ -141,7 +141,7 @@ pub async fn generate_login_token(session: TypedSession, db_pool: Data<DbPool>) 
         .map_err(|err| MyErrors::InternalServerError(err.to_string()))?
         .ok_or(MyErrors::AccessDenied)?;
 
-    let token = LoginToken::create_login_token(user_id, &mut db_conn)
+    let token = LoginToken::create_or_get_login_token(user_id, &mut db_conn)
         .await
         .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;
 

@@ -13,7 +13,6 @@ diesel::table! {
         id -> Int8,
         user_id -> Int8,
         token -> Varchar,
-        creation -> Timestamp,
     }
 }
 
