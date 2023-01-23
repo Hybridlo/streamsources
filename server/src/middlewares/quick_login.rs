@@ -7,7 +7,7 @@ use actix_web::FromRequest;
 use futures_util::future::LocalBoxFuture;
 use serde::Deserialize;
 
-use crate::DbPool;
+use crate::{DbPool, errors::IntoResultMyErr};
 use crate::errors::MyErrors;
 use crate::db::LoginToken;
 use crate::util::session_state::TypedSession;
@@ -58,25 +58,18 @@ where
             let db_pool = req
                 .app_data::<Data<DbPool>>()
                 .ok_or(MyErrors::InternalServerError("DB access error".to_string()))?;
-            let mut db_conn = db_pool.get()
-                .await
-                .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;
+            let mut db_conn = db_pool.get().await.into_my()?;
             
             let (r, mut pl) = req.into_parts();
             let query = r.query_string();
             
             // if there is no login token, or it's invalid - we just ignore it
             if let Ok(login_data) = serde_urlencoded::de::from_str::<LoginTokenQuery>(query) {
-                println!("got login");
                 if let Ok(user_id) = LoginToken::validate_token(&login_data.login_token, &mut db_conn).await {
-                    println!("got uid");
                     if let Ok(session) = TypedSession::from_request(&r, &mut pl).await {
-                        println!("got request");
                         session.renew();
                         session
-                            .insert_user_id(user_id)
-                            .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;
-                        println!("session renewed");
+                            .insert_user_id(user_id).into_my()?;
                     }
                 }
             }

@@ -5,6 +5,7 @@ use actix_web::web::{Data, Json, Query};
 use paperclip::actix::{Apiv2Schema, api_v2_operation};
 use serde::{Serialize, Deserialize};
 
+use crate::errors::IntoResultMyErr;
 use crate::errors::{e500, MyErrors};
 use crate::DbPool;
 use crate::SCOPES;
@@ -110,15 +111,11 @@ pub struct UserInfo {
 }
 #[api_v2_operation]
 pub async fn login_check(session: TypedSession, db_pool: Data<DbPool>) -> Result<Json<UserInfo>, MyErrors> {
-    let mut db_conn = db_pool.get()
-        .await
-        .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;
+    let mut db_conn = db_pool.get().await?;
 
-    match session.get_user_id().map_err(|err| MyErrors::InternalServerError(err.to_string()))? {
+    match session.get_user_id()? {
         Some(user_id) => {
-            let username = TwitchUser::get_user(user_id, &mut db_conn)
-                .await
-                .map_err(|err| MyErrors::InternalServerError(err.to_string()))?
+            let username = TwitchUser::get_user(user_id, &mut db_conn).await.into_my()?
                 .ok_or(MyErrors::AccessDenied)?.username;
             Ok(Json(UserInfo { username }))
         },
@@ -132,18 +129,11 @@ pub struct LoginTokenResponse {
 }
 #[api_v2_operation]
 pub async fn generate_login_token(session: TypedSession, db_pool: Data<DbPool>) -> Result<Json<LoginTokenResponse>, MyErrors> {
-    let mut db_conn = db_pool.get()
-        .await
-        .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;
+    let mut db_conn = db_pool.get().await?;
 
-    let user_id = session
-        .get_user_id()
-        .map_err(|err| MyErrors::InternalServerError(err.to_string()))?
-        .ok_or(MyErrors::AccessDenied)?;
+    let user_id = session.get_user_id()?.ok_or(MyErrors::AccessDenied)?;
 
-    let token = LoginToken::create_or_get_login_token(user_id, &mut db_conn)
-        .await
-        .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;
+    let token = LoginToken::create_or_get_login_token(user_id, &mut db_conn).await.into_my()?;
 
     Ok(Json(LoginTokenResponse { token }))
 }

@@ -17,6 +17,19 @@ diesel::table! {
 }
 
 diesel::table! {
+    subscription (id) {
+        id -> Int8,
+        user_id -> Nullable<Int8>,
+        secret -> Varchar,
+        sub_id -> Varchar,
+        #[sql_name = "type"]
+        type_ -> Varchar,
+        connected -> Bool,
+        inactive_since -> Timestamp,
+    }
+}
+
+diesel::table! {
     twitch_users (id) {
         id -> Int8,
         username -> Varchar,
@@ -30,10 +43,9 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(quick_login_token -> twitch_users (user_id));
-
 diesel::allow_tables_to_appear_in_same_query!(
     auth_state,
     quick_login_token,
+    subscription,
     twitch_users,
 );

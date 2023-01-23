@@ -1,4 +1,5 @@
 pub mod front_common;
+pub mod common_data;
 
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};

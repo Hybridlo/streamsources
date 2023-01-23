@@ -10,7 +10,7 @@ actix-web = "4"
 actix-files = "0.6.2"
 twitch-sources-rework = {path=".."}
 serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+serde_json = { version = "1.0", features = ["raw_value"] }
 log = "0.4"
 env_logger = "0.9.0"
 actix-session = { version = "0.7", features = ["redis-rs-session", "redis-rs-tls-session"] }
@@ -20,10 +20,10 @@ diesel = { version = "2.0", features = ["postgres", "chrono"] }
 dotenvy = "0.15"
 diesel-async = { version = "0.1", features = ["postgres", "deadpool"]}
 anyhow = "1.0"
-reqwest = "0.11"
+reqwest = { version = "0.11", features = ["json"] }
 redis = { version = "0.22", features = ["aio"] }
 deadpool-redis = "0.11.0"
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 paperclip = { version = "0.7", features = ["actix4", "v3", "actix-session", "actix-files"] }
 base64 = "0.13"
 rand = "0.8"
@@ -32,3 +32,4 @@ actix = "0.13"
 futures = "0.3"
 futures-util = "0.3.25"
 serde_urlencoded = "0.7"
+hex = "0.4"

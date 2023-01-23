@@ -22,6 +22,10 @@ pub use util::RedisPool;
 
 const SCOPES: [&str; 1] = ["channel:read:predictions"];
 const REDIRECT_URL: &str = "/twitch_login/";
+const WEBHOOK_URL: &str = "/webhook/";
+
+#[cfg(not(debug_assertions))]
+const PROD_BASE_URL: &str = "https://will_see.com";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -41,6 +45,20 @@ async fn main() -> std::io::Result<()> {
 
     let secret_key_val = std::env::var("SECRET").expect("SECRET must be set");
     let secret_key = Key::from(secret_key_val.as_bytes());
+
+    // check and create needed subscriptions
+    db::Subscription::get_or_create_subscriptions(
+        vec![
+            "user.authorization.revoke".to_string()
+        ],
+        None,
+        &mut *db_pool.get().await
+            .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?,
+        &redis_pool,
+        &http_client
+    )
+        .await
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
 
     HttpServer::new(move || {
         App::new()
@@ -68,6 +86,7 @@ async fn main() -> std::io::Result<()> {
                             .route("/predictions", web_ax::get().to(websockets::predictions_websocket))
                     )
             )
+            .route(WEBHOOK_URL, web_ax::post().to(routes::webhook))
             .wrap(middlewares::QuickLoginFactory)
             .service(Files::new("/sources", "./sources/").index_file("index.html"))
             .default_service(Files::new("/", "./dist/").index_file("index.html").default_handler(

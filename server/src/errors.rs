@@ -45,13 +45,39 @@ impl std::fmt::Display for MyErrors {
     }
 }
 
-impl std::error::Error for MyErrors {}
+// impl std::error::Error for MyErrors {}
 
 impl ResponseError for MyErrors {
     fn status_code(&self) -> reqwest::StatusCode {
         match self {
             MyErrors::InternalServerError(_) => reqwest::StatusCode::INTERNAL_SERVER_ERROR,
             MyErrors::AccessDenied => reqwest::StatusCode::FORBIDDEN,
+        }
+    }
+}
+
+impl<T> From<T> for MyErrors
+where
+    T: std::error::Error
+{
+    fn from(err: T) -> Self {
+        Self::InternalServerError(err.to_string())
+    }
+}
+
+// i don't like this, but this shortens error transformation
+pub trait IntoResultMyErr<T, E> {
+    fn into_my(self) -> Result<T, MyErrors>;
+}
+
+impl<T, E> IntoResultMyErr<T, E> for Result<T, E>
+where
+    E: ToString
+{
+    fn into_my(self) -> Result<T, MyErrors> {
+        match self {
+            Ok(res) => Ok(res),
+            Err(err) => Err(MyErrors::InternalServerError(err.to_string())),
         }
     }
 }

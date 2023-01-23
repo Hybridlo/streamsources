@@ -165,4 +165,11 @@ impl TwitchUser {
         twitch_users::table.filter(twitch_users::dsl::id.eq(id))
             .first::<TwitchUser>(db_conn).await.optional()
     }
+
+    pub async fn delete_user(id: i64, db_conn: &mut AsyncPgConnection) -> Result<(), diesel::result::Error> {
+        diesel::delete(twitch_users::table.filter(twitch_users::dsl::id.eq(id)))
+            .execute(db_conn).await?;
+
+        Ok(())
+    }
 }
