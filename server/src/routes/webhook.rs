@@ -3,7 +3,7 @@ use std::str::from_utf8;
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::web::Bytes;
-use actix_web::web::{Data, Json};
+use actix_web::web::Data;
 use serde::Deserialize;
 use serde_json::Value;
 use twitch_sources_rework::common_data::EventSubMessage;
@@ -32,7 +32,9 @@ pub struct WebhookRequestData {
 pub async fn webhook(request: HttpRequest, body: Bytes, db_pool: Data<DbPool>) -> Result<HttpResponse, MyErrors> {    
     let mut db_conn = db_pool.get().await?;
     // can't have both Json<> and Bytes parameters, only first parameter will be populated
+    println!("{body:?}");
     let post = serde_json::de::from_slice::<WebhookRequestData>(&*body)?;
+    println!("b");
 
     let sub = Subscription::get_subscription(&post.subscription.id, &mut db_conn).await.into_my()?;
 
@@ -79,15 +81,15 @@ pub async fn webhook(request: HttpRequest, body: Bytes, db_pool: Data<DbPool>) -
         return Ok(HttpResponse::Accepted().body(""));
     }
     
-    match &post.type_ {
+    match post.type_ {
         WebhookRequestType::Challenge(challenge_string) => {
-            return Ok(HttpResponse::Ok().body(challenge_string.clone()));
+            return Ok(HttpResponse::Ok().body(challenge_string));
         },
         WebhookRequestType::Event(event) => {
             let message = EventSubMessage::new(
                 &post.subscription.type_,
                 from_utf8(timestamp).expect("This can never be not valid ascii/utf8"),
-                event.clone()
+                event
             ).into_my()?;
             
             handle_message(message, &mut db_conn).await.into_my()?;

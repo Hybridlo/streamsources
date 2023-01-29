@@ -2,6 +2,7 @@ use anyhow::{Result, anyhow};
 use deadpool_redis::Connection;
 use rand::Rng;
 use serde::{Serialize, Deserialize};
+use twitch_sources_rework::common_data::SubTypes;
 
 #[cfg(not(debug_assertions))]
 use crate::PROD_BASE_URL;
@@ -70,16 +71,16 @@ pub enum SubStatus {
 #[derive(Serialize)]
 struct SubRequest {
     #[serde(rename = "type")]
-    type_: String,
+    type_: SubTypes,
     version: String,
     condition: SubCondition,
     transport: SubTransport
 }
 
 impl SubRequest {
-    fn new(user_id: Option<i64>, sub_type: &str, callback_url: &str, secret: &str) -> Self {
+    fn new(user_id: Option<i64>, sub_type: &SubTypes, callback_url: &str, secret: &str) -> Self {
         Self {
-            type_: sub_type.to_string(),
+            type_: sub_type.clone(),
             version: "1".to_string(),
             condition: match user_id {
                 Some(user_id) => SubCondition::BroadcasterUserId(user_id.to_string()),
@@ -94,12 +95,13 @@ impl SubRequest {
     }
 }
 
+
 #[derive(Deserialize)]
 pub struct SubData {
     pub id: String,
     pub status: SubStatus,
     #[serde(rename="type")]
-    pub type_: String,
+    pub type_: SubTypes,
     pub version: String,
     pub cost: i64,
     pub condition: SubCondition,
@@ -114,7 +116,7 @@ struct SubResponse {
     max_total_cost: i64
 }
 
-pub async fn subscribe(sub_type: &str, user_id: Option<i64>, mut redis_conn: Connection, http_client: &reqwest::Client) -> Result<SubData> {
+pub async fn subscribe(sub_type: &SubTypes, user_id: Option<i64>, mut redis_conn: Connection, http_client: &reqwest::Client) -> Result<SubData> {
     let twitch_key = std::env::var("TWITCH_KEY").expect("TWITCH_KEY is not set");
     
     #[cfg(debug_assertions)]
@@ -137,16 +139,14 @@ pub async fn subscribe(sub_type: &str, user_id: Option<i64>, mut redis_conn: Con
                 .await?
         ,
         None => {
-            let a = http_client.post(TWITCH_API_URI.to_string() + "/eventsub/subscriptions")
+            http_client.post(TWITCH_API_URI.to_string() + "/eventsub/subscriptions")
                 .header("Client-ID", twitch_key)
                 .bearer_auth(get_app_token(&mut redis_conn, http_client).await?)
                 .json(&SubRequest::new(None, sub_type, &callback_url, &secret))
                 .send()
                 .await?
-                .bytes()
-                .await?;
-            println!("{a:?}");
-            serde_json::de::from_slice(&*a)?
+                .json::<SubResponse>()
+                .await?
         }
         ,
     };

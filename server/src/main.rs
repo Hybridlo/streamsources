@@ -11,12 +11,14 @@ use actix_web::cookie::Key;
 use actix_files::{Files, NamedFile};
 use actix_web::web as web_ax;
 use actix_web::{web::Data, App, HttpServer};
+use actix_web::middleware::Logger;
 use actix_web::dev::{fn_service, ServiceResponse, ServiceRequest};
 use paperclip::actix::OpenApiExt;
 use paperclip::actix::web;
 
 use actix_session::SessionMiddleware;
 
+use twitch_sources_rework::common_data::SubTypes;
 pub use util::DbPool;
 pub use util::RedisPool;
 
@@ -49,7 +51,7 @@ async fn main() -> std::io::Result<()> {
     // check and create needed subscriptions
     db::Subscription::get_or_create_subscriptions(
         vec![
-            "user.authorization.revoke".to_string()
+            SubTypes::UserAuthorizationRevoke
         ],
         None,
         &mut *db_pool.get().await
@@ -62,6 +64,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .wrap_api()
             .wrap(SessionMiddleware::new(redis_session.clone(), secret_key.clone()))
             .app_data(Data::new(db_pool.clone()))

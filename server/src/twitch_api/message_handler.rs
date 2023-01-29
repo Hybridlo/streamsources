@@ -6,7 +6,6 @@ use crate::db::TwitchUser;
 
 async fn unauthorize_user(user_id: &str, db_conn: &mut AsyncPgConnection) -> Result<()> {
     TwitchUser::delete_user(user_id.parse()?, db_conn).await?;
-    println!("user delete successfully");
 
     Ok(())
 }
