@@ -1,3 +1,4 @@
+use twitch_sources_rework::TWITCH_AUTH_URL;
 use yew::prelude::*;
 use yew_hooks::use_async;
 use yewdux::prelude::use_store;
@@ -6,8 +7,6 @@ use twitch_sources_client::apis::default_api::api_request_login_get;
 
 use crate::state::ClientConfig;
 use crate::state::ErrorState;
-
-const TWITCH_AUTH_URL: &str = "https://id.twitch.tv/oauth2/authorize";
 
 #[function_component(LoginButton)]
 pub fn login_button() -> Html {

@@ -67,9 +67,13 @@ where
             if let Ok(login_data) = serde_urlencoded::de::from_str::<LoginTokenQuery>(query) {
                 if let Ok(user_id) = LoginToken::validate_token(&login_data.login_token, &mut db_conn).await {
                     if let Ok(session) = TypedSession::from_request(&r, &mut pl).await {
-                        session.renew();
-                        session
-                            .insert_user_id(user_id).into_my()?;
+                        
+                        if session.get_user_id()?.is_none() {
+                            session.renew();
+                            session
+                                .insert_user_id(user_id).into_my()?;
+                        }
+
                     }
                 }
             }

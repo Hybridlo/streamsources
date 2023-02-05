@@ -94,8 +94,12 @@ async fn main() -> std::io::Result<()> {
                     )
             )
             .route(WEBHOOK_URL, web_ax::post().to(routes::webhook))
-            .wrap(middlewares::QuickLoginFactory)
-            .service(Files::new("/sources", "./sources/").index_file("index.html"))
+            .service(
+                web_ax::scope("/sources")
+                    .wrap(middlewares::AutoTwitchLoginFactory)
+                    .wrap(middlewares::QuickLoginFactory)
+                    .service(Files::new("", "./sources/").index_file("index.html"))
+            )
             .default_service(Files::new("/", "./dist/").index_file("index.html").default_handler(
                 fn_service(
                     |req: ServiceRequest| async {

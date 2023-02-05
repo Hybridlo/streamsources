@@ -26,7 +26,7 @@ pub struct LoginUrlResponse {
 }
 
 impl LoginUrlResponse {
-    fn new(host: &str, state: &str) -> Self {
+    pub fn new(host: &str, state: &str) -> Self {
         let twitch_key = std::env::var("TWITCH_KEY").expect("TWITCH_KEY must be set");
 
         Self {
