@@ -3,7 +3,7 @@ use yew::{Properties, UseStateHandle};
 
 use crate::front_common::{SourceColor, options_util::IntoWithLogin};
 
-use super::{PredictionState, PreditionStatus};
+use super::{PredictionState, PredictionStatus};
 
 #[derive(Serialize)]
 pub struct PredictionsSourceOptionsLogin {
@@ -14,7 +14,9 @@ pub struct PredictionsSourceOptionsLogin {
 
 #[derive(Default, Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub struct PredictionsSourceOptions {
+    #[serde(default)]
     pub color: SourceColor,
+    #[serde(default)]
     pub is_maximized: bool
 }
 
@@ -52,10 +54,10 @@ impl PredictionsSourceOptions {
 
 #[derive(PartialEq, Properties)]
 pub struct PredictionsProps {
-    pub is_white: bool,
+    pub color: SourceColor,
     pub is_maximized: bool,
     pub state: UseStateHandle<PredictionState>,
     pub show_element_state: UseStateHandle<bool>,
     pub show_status_state: UseStateHandle<bool>,
-    pub status_state: UseStateHandle<PreditionStatus>,
+    pub status_state: UseStateHandle<PredictionStatus>,
 }

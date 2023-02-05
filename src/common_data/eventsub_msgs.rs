@@ -88,16 +88,6 @@ pub struct ChannelPredictionEnd {
     pub ended_at: String
 }
 
-impl ChannelPredictionEnd {
-    pub fn get_winning_outcome_index(&self) -> Option<usize> {
-        if let Some(win_id) = &self.winning_outcome_id {
-            return self.outcomes.iter().position(|item| &item.id == win_id);
-        }
-
-        None
-    }
-}
-
 // the wrapper for the actual data
 #[derive(Serialize, Deserialize)]
 pub enum EventSubData {
@@ -170,12 +160,24 @@ impl EventSubMessage {
 
         Ok(res)
     }
+
+    pub fn get_target(&self) -> String {
+        let target = match &self.data {
+            EventSubData::UserAuthorizationRevoke(data) => &data.client_id,
+            EventSubData::ChannelPredictionBegin(data) => &data.broadcaster_user_id,
+            EventSubData::ChannelPredictionProgress(data) => &data.broadcaster_user_id,
+            EventSubData::ChannelPredictionLock(data) => &data.broadcaster_user_id,
+            EventSubData::ChannelPredictionEnd(data) => &data.broadcaster_user_id,
+        };
+
+        target.clone()
+    }
 }
 
 // making sure we can parse this stuff correctly, it will be big... maybe should be in a seperate file(s)?
 #[cfg(test)]
 mod tests {
-    use super::{EventSubMessage, SubTypes, EventSubData};
+    use super::{EventSubMessage, SubTypes};
 
     #[test]
     fn test_message_serialization_user_authorization_revoke() {
@@ -560,12 +562,7 @@ mod tests {
             "ended_at": "2020-07-15T17:16:11.17106713Z"
         });
 
-        let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
-        if let EventSubData::ChannelPredictionEnd(data) = res.data {
-            assert_eq!(data.get_winning_outcome_index(), Some(0));
-        } else {
-            panic!("Somehow successfully parsed wrong type");
-        }
+        EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
     }
 
     #[test]
@@ -615,12 +612,7 @@ mod tests {
             "ended_at": "2020-07-15T17:16:11.17106713Z"
         });
 
-        let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
-        if let EventSubData::ChannelPredictionEnd(data) = res.data {
-            assert_eq!(data.get_winning_outcome_index(), Some(0));
-        } else {
-            panic!("Somehow successfully parsed wrong type");
-        }
+        EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
     }
 
     #[test]
@@ -670,12 +662,7 @@ mod tests {
             "ended_at": "2020-07-15T17:16:11.17106713Z"
         });
 
-        let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
-        if let EventSubData::ChannelPredictionEnd(data) = res.data {
-            assert_eq!(data.get_winning_outcome_index(), Some(0));
-        } else {
-            panic!("Somehow successfully parsed wrong type");
-        }
+        EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
     }
 
     #[test]
@@ -740,12 +727,7 @@ mod tests {
             "ended_at": "2020-07-15T17:16:11.17106713Z"
         });
 
-        let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
-        if let EventSubData::ChannelPredictionEnd(data) = res.data {
-            assert_eq!(data.get_winning_outcome_index(), Some(1));
-        } else {
-            panic!("Somehow successfully parsed wrong type");
-        }
+        EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
     }
 
     #[test]
@@ -795,12 +777,7 @@ mod tests {
             "ended_at": "2020-07-15T17:16:11.17106713Z"
         });
 
-        let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
-        if let EventSubData::ChannelPredictionEnd(data) = res.data {
-            assert_eq!(data.get_winning_outcome_index(), Some(1));
-        } else {
-            panic!("Somehow successfully parsed wrong type");
-        }
+        EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
     }
 
     #[test]
@@ -850,12 +827,7 @@ mod tests {
             "ended_at": "2020-07-15T17:16:11.17106713Z"
         });
 
-        let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
-        if let EventSubData::ChannelPredictionEnd(data) = res.data {
-            assert_eq!(data.get_winning_outcome_index(), Some(1));
-        } else {
-            panic!("Somehow successfully parsed wrong type");
-        }
+        EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
     }
 
     #[test]
@@ -890,12 +862,7 @@ mod tests {
             "ended_at": "2020-07-15T17:16:11.17106713Z"
         });
 
-        let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
-        if let EventSubData::ChannelPredictionEnd(data) = res.data {
-            assert_eq!(data.get_winning_outcome_index(), Some(0));
-        } else {
-            panic!("Somehow successfully parsed wrong type");
-        }
+        EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
     }
 
     #[test]
@@ -930,12 +897,7 @@ mod tests {
             "ended_at": "2020-07-15T17:16:11.17106713Z"
         });
 
-        let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
-        if let EventSubData::ChannelPredictionEnd(data) = res.data {
-            assert_eq!(data.get_winning_outcome_index(), None);
-        } else {
-            panic!("Somehow successfully parsed wrong type");
-        }
+        EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
     }
 
     #[test]
@@ -1000,11 +962,6 @@ mod tests {
             "ended_at": "2020-07-15T17:16:11.17106713Z"
         });
 
-        let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
-        if let EventSubData::ChannelPredictionEnd(data) = res.data {
-            assert_eq!(data.get_winning_outcome_index(), None);
-        } else {
-            panic!("Somehow successfully parsed wrong type");
-        }
+        EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val).unwrap();
     }
 }

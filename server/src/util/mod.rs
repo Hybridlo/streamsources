@@ -1,4 +1,5 @@
 mod common;
+mod prediction_test;
 
 pub mod message_manager;
 pub mod session_state;
@@ -11,3 +12,4 @@ pub use common::get_redis_client_pool;
 pub use common::get_redis_connection;
 pub use common::RedisPool;
 pub use common::DbPool;
+pub use prediction_test::PredictionsTestActor;

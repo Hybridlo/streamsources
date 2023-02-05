@@ -8,6 +8,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use twitch_sources_rework::common_data::EventSubMessage;
 
+use crate::RedisPool;
 use crate::db::Subscription;
 use crate::errors::IntoResultMyErr;
 use crate::errors::MyErrors;
@@ -29,12 +30,11 @@ pub struct WebhookRequestData {
     type_: WebhookRequestType
 }
 
-pub async fn webhook(request: HttpRequest, body: Bytes, db_pool: Data<DbPool>) -> Result<HttpResponse, MyErrors> {    
+pub async fn webhook(request: HttpRequest, body: Bytes, db_pool: Data<DbPool>, redis_pool: Data<RedisPool>) -> Result<HttpResponse, MyErrors> {    
     let mut db_conn = db_pool.get().await?;
+    let mut redis_conn = redis_pool.get().await?;
     // can't have both Json<> and Bytes parameters, only first parameter will be populated
-    println!("{body:?}");
     let post = serde_json::de::from_slice::<WebhookRequestData>(&*body)?;
-    println!("b");
 
     let sub = Subscription::get_subscription(&post.subscription.id, &mut db_conn).await.into_my()?;
 
@@ -92,7 +92,7 @@ pub async fn webhook(request: HttpRequest, body: Bytes, db_pool: Data<DbPool>) -
                 event
             ).into_my()?;
             
-            handle_message(message, &mut db_conn).await.into_my()?;
+            handle_message(message, &mut db_conn, &mut redis_conn).await.into_my()?;
             
             return Ok(HttpResponse::Accepted().body(""));
         },

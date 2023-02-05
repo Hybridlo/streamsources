@@ -15,9 +15,9 @@ fn app() -> Html {
     let (_, config_setter) = use_store::<ClientConfig>();
 
     config_setter.reduce_mut(|config| {
-        let window = web_sys::window().unwrap();
+        let window = web_sys::window().expect("Gotta have a window object");
         let location = window.location();
-        let path = location.origin().unwrap();
+        let path = location.origin().expect("Gotta have a location origin");
         config.config.base_path = path;
     });
 

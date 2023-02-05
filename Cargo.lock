@@ -724,6 +724,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "dashmap"
+version = "5.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "907076dfda823b0b36d2a1bb5f90c96660a5bbcd7729e10727f07858f22c4edc"
+dependencies = [
+ "cfg-if",
+ "hashbrown",
+ "lock_api",
+ "once_cell",
+ "parking_lot_core",
+]
+
+[[package]]
 name = "deadpool"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1513,9 +1526,9 @@ checksum = "e34f76eb3611940e0e7d53a9aaa4e6a3151f69541a282fd0dad5571420c53ff1"
 
 [[package]]
 name = "lock_api"
-version = "0.4.7"
+version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "327fa5b6a6940e4699ec49a9beae1ea4845c6bab9314e4f84ac68742139d8c53"
+checksum = "435011366fe56583b16cf956f9df0095b405b82d76425bc8981c0e22e60ec4df"
 dependencies = [
  "autocfg",
  "scopeguard",
@@ -1647,9 +1660,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.13.0"
+version = "1.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
+checksum = "6f61fba1741ea2b3d6a1e3178721804bb716a68a6aeba1149b5d52e3d464ea66"
 
 [[package]]
 name = "opaque-debug"
@@ -1946,8 +1959,13 @@ dependencies = [
 name = "predictions-list"
 version = "0.1.0"
 dependencies = [
+ "serde_json",
+ "serde_urlencoded",
+ "twitch-sources-rework",
  "wasm-logger",
+ "web-sys",
  "yew",
+ "yew-hooks",
 ]
 
 [[package]]
@@ -2301,6 +2319,7 @@ dependencies = [
  "anyhow",
  "base64",
  "chrono",
+ "dashmap",
  "deadpool-redis",
  "diesel",
  "diesel-async",
@@ -2319,6 +2338,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "sha2",
+ "tokio",
  "twitch-sources-rework",
 ]
 
@@ -2651,7 +2671,6 @@ dependencies = [
  "anyhow",
  "chrono",
  "gloo-timers",
- "rand",
  "serde",
  "serde_json",
  "strum",

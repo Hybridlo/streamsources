@@ -7,6 +7,7 @@ use twitch_sources_rework::front_common::SourceColor;
 use twitch_sources_rework::front_common::predictions::*;
 
 use crate::components::widgets::Carousel;
+use crate::components::widgets::TestButton;
 use crate::components::widgets::source_settings::BooleanChooser;
 use crate::components::widgets::source_settings::SourceColorChooser;
 use crate::components::widgets::source_settings::StaticSourceLink;
@@ -23,16 +24,16 @@ pub enum PredictionSkins {
 impl PredictionSkins {
     fn to_html(
         &self,
-        is_white: bool,
+        color: SourceColor,
         is_maximized: bool,
         state: UseStateHandle<PredictionState>,
         show_element_state: UseStateHandle<bool>,
         show_status_state: UseStateHandle<bool>,
-        status_state: UseStateHandle<PreditionStatus>
+        status_state: UseStateHandle<PredictionStatus>
     ) -> Html {
         match self {
             PredictionSkins::List => html! {
-                <components::PredictionsList {state} {is_white} {is_maximized} {show_status_state} {show_element_state} {status_state}/>
+                <components::PredictionsList {state} {color} {is_maximized} {show_status_state} {show_element_state} {status_state}/>
             },
         }
     }
@@ -69,12 +70,12 @@ fn predictions_carousel(props: &PredictionsCarouselProps) -> Html {
             }
         ],
         lock_time: Utc::now(),
-        status: PreditionStatus::Locked
+        status: PredictionStatus::Locked
     });
 
     let show_element_state = use_state(|| true);
     let show_status_state = use_state(|| true);
-    let status_state = use_state(|| PreditionStatus::Locked);
+    let status_state = use_state(|| PredictionStatus::Locked);
 
     // this can be expanded to have some animations periodically to showcase better
     /* let animator = use_mut_ref(|| PredictionStateAnimator::new(
@@ -86,7 +87,7 @@ fn predictions_carousel(props: &PredictionsCarouselProps) -> Html {
     )); */
 
     let skins: Vec<Html> = PredictionSkins::iter().map(|skin| skin.to_html(
-        props.color == SourceColor::White,
+        props.color,
         props.is_maximized,
         source_state.clone(),
         show_element_state.clone(),
@@ -137,6 +138,15 @@ pub fn predictions_settings() -> Html {
                                 <LoginSourceLink<PredictionsSourceOptions> options={collected_options.clone()} source_name={"predictions"} skin={chosen_skin.to_string()} />
                             })
                         }
+                    </div>
+                    
+                    <div class="d-flex flex-column justify-content-center align-items-center">
+                        <div>
+                            <h5>{"Start a test event"}</h5>
+                        </div>
+                        <div>
+                            { login_gate(html!{ <TestButton test_name={"predictions"} timeout_secs={13} /> }) }
+                        </div>
                     </div>
                 </div>
             </div>

@@ -29,6 +29,8 @@ const WEBHOOK_URL: &str = "/webhook/";
 #[cfg(not(debug_assertions))]
 const PROD_BASE_URL: &str = "https://will_see.com";
 
+pub type RunningTests = dashmap::DashSet<String>;
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     util::init_debug_log();
@@ -70,11 +72,13 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(db_pool.clone()))
             .app_data(Data::new(redis_pool.clone()))
             .app_data(Data::new(http_client.clone()))
+            .app_data(Data::new(RunningTests::new()))
             .service(
                 web::scope("/api")
                     .route("/request_login", web::get().to(routes::login_url))
                     .route("/login_check", web::get().to(routes::login_check))
                     .route("/generate_login_token", web::get().to(routes::generate_login_token))
+                    .route("/test", web::get().to(routes::execute_test))
             )
             .route(REDIRECT_URL, web::get().to(routes::twitch_login_end))
             .with_json_spec_at("/api_spec/v2")

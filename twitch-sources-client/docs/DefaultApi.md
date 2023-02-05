@@ -7,6 +7,7 @@ Method | HTTP request | Description
 [**api_generate_login_token_get**](DefaultApi.md#api_generate_login_token_get) | **GET** /api/generate_login_token | 
 [**api_login_check_get**](DefaultApi.md#api_login_check_get) | **GET** /api/login_check | 
 [**api_request_login_get**](DefaultApi.md#api_request_login_get) | **GET** /api/request_login | 
+[**api_test_get**](DefaultApi.md#api_test_get) | **GET** /api/test | 
 
 
 
@@ -75,6 +76,34 @@ Name | Type | Description  | Required | Notes
 ### Return type
 
 [**crate::models::LoginUrlResponse**](LoginUrlResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: */*
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to Model list]](../README.md#documentation-for-models) [[Back to README]](../README.md)
+
+
+## api_test_get
+
+> serde_json::Value api_test_get(test)
+
+
+### Parameters
+
+
+Name | Type | Description  | Required | Notes
+------------- | ------------- | ------------- | ------------- | -------------
+**test** | **String** |  | [required] |
+
+### Return type
+
+[**serde_json::Value**](serde_json::Value.md)
 
 ### Authorization
 

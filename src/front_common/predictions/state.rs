@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use yew::UseStateSetter;
 use gloo_timers::callback::{Interval, Timeout};
 
-use crate::{FPS, GLOBAL_DELAY_VALUE, GLOBAL_DELAY_VALUE_SECONDS};
+use crate::{FPS, GLOBAL_DELAY_VALUE, GLOBAL_DELAY_VALUE_SECONDS, common_data::{EventSubData, EventSubMessage}};
 use super::super::transition_funcs::ease_in_out_formula;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -25,7 +25,7 @@ pub struct PredictionOutcomeState {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub enum PreditionStatus {
+pub enum PredictionStatus {
     InProgress,
     Locked,
     #[default]
@@ -39,7 +39,7 @@ pub struct PredictionState {
     pub winning_outcome_id: Option<String>,
     pub outcomes: Vec<PredictionOutcomeState>,
     pub lock_time: DateTime<Utc>,
-    pub status: PreditionStatus,
+    pub status: PredictionStatus,
 }
 
 impl PredictionState {
@@ -49,7 +49,7 @@ impl PredictionState {
         winning_outcome_id: Option<String>,
         outcomes: Vec<PredictionOutcomeState>,
         lock_time: DateTime<Utc>,
-        status: PreditionStatus
+        status: PredictionStatus
     ) -> Self {
         PredictionState {
             id,
@@ -82,22 +82,84 @@ impl PredictionState {
     }
 }
 
+impl TryFrom<EventSubMessage> for PredictionState {
+    type Error = anyhow::Error;
 
-// had to split just the state and the ui part
-// because they work independently
-#[derive(Clone, Default, Debug, PartialEq)]
-pub struct PredUIState {
-    pub status: PreditionStatus,
-    pub show_element: bool,
-    pub show_status: bool
-}
-
-impl PredUIState {
-    pub fn new(status: PreditionStatus) -> Self {
-        PredUIState {
-            show_element: false,
-            show_status: true,
-            status
+    fn try_from(value: EventSubMessage) -> Result<Self, Self::Error> {
+        match value.data {
+            EventSubData::ChannelPredictionBegin(data) => Ok(Self { 
+                id: data.id,
+                title: data.title,
+                winning_outcome_id: None,
+                outcomes: data.outcomes.into_iter().map(|outcome| PredictionOutcomeState {
+                    id: outcome.id,
+                    title: outcome.title,
+                    color: outcome.color,
+                    users: outcome.users,
+                    channel_points: outcome.channel_points,
+                    top_predictors: outcome.top_predictors.into_iter().map(|predictor| UserPredictionState {
+                        user_name: predictor.user_name,
+                        channel_points_used: predictor.channel_points_used,
+                    }).collect(),
+                }).collect(),
+                lock_time: DateTime::parse_from_rfc3339(&data.locks_at)?.with_timezone(&Utc),
+                status: PredictionStatus::InProgress
+            }),
+            EventSubData::ChannelPredictionProgress(data) => Ok(Self { 
+                id: data.id,
+                title: data.title,
+                winning_outcome_id: None,
+                outcomes: data.outcomes.into_iter().map(|outcome| PredictionOutcomeState {
+                    id: outcome.id,
+                    title: outcome.title,
+                    color: outcome.color,
+                    users: outcome.users,
+                    channel_points: outcome.channel_points,
+                    top_predictors: outcome.top_predictors.into_iter().map(|predictor| UserPredictionState {
+                        user_name: predictor.user_name,
+                        channel_points_used: predictor.channel_points_used,
+                    }).collect(),
+                }).collect(),
+                lock_time: DateTime::parse_from_rfc3339(&data.locks_at)?.with_timezone(&Utc),
+                status: PredictionStatus::InProgress
+            }),
+            EventSubData::ChannelPredictionLock(data) => Ok(Self { 
+                id: data.id,
+                title: data.title,
+                winning_outcome_id: None,
+                outcomes: data.outcomes.into_iter().map(|outcome| PredictionOutcomeState {
+                    id: outcome.id,
+                    title: outcome.title,
+                    color: outcome.color,
+                    users: outcome.users,
+                    channel_points: outcome.channel_points,
+                    top_predictors: outcome.top_predictors.into_iter().map(|predictor| UserPredictionState {
+                        user_name: predictor.user_name,
+                        channel_points_used: predictor.channel_points_used,
+                    }).collect(),
+                }).collect(),
+                lock_time: DateTime::parse_from_rfc3339(&data.locked_at)?.with_timezone(&Utc),
+                status: PredictionStatus::Locked
+            }),
+            EventSubData::ChannelPredictionEnd(data) => Ok(Self { 
+                id: data.id,
+                title: data.title,
+                winning_outcome_id: data.winning_outcome_id,
+                outcomes: data.outcomes.into_iter().map(|outcome| PredictionOutcomeState {
+                    id: outcome.id,
+                    title: outcome.title,
+                    color: outcome.color,
+                    users: outcome.users,
+                    channel_points: outcome.channel_points,
+                    top_predictors: outcome.top_predictors.into_iter().map(|predictor| UserPredictionState {
+                        user_name: predictor.user_name,
+                        channel_points_used: predictor.channel_points_used,
+                    }).collect(),
+                }).collect(),
+                lock_time: DateTime::parse_from_rfc3339(&data.ended_at)?.with_timezone(&Utc),
+                status: PredictionStatus::Finished
+            }),
+            _ => Err(anyhow::anyhow!("Could not understand the message, please report this error")),
         }
     }
 }
@@ -110,7 +172,7 @@ pub struct PredictionStateAnimator {
     pub state_setter: UseStateSetter<PredictionState>,
     pub show_element_setter: UseStateSetter<bool>,
     pub show_status_setter: UseStateSetter<bool>,
-    pub status_setter: UseStateSetter<PreditionStatus>,
+    pub status_setter: UseStateSetter<PredictionStatus>,
 
     timer: Rc<RefCell<f64>>,
 
@@ -125,7 +187,7 @@ impl PredictionStateAnimator {
         curr_state: &PredictionState,
         show_element_setter: UseStateSetter<bool>,
         show_status_setter: UseStateSetter<bool>,
-        status_setter: UseStateSetter<PreditionStatus>,
+        status_setter: UseStateSetter<PredictionStatus>,
     ) -> Self {
         Self {
             prev_state: curr_state.clone(),
@@ -144,7 +206,17 @@ impl PredictionStateAnimator {
     // we can't rely on UseState value, because it doesn't update without use_state func
     // so we need curr_state from the called, that uses use_state
     pub fn set_state(&mut self, new_state: PredictionState, curr_state: &PredictionState) {
-        self.prev_state = curr_state.clone();
+        // we got a new prediction, so gotta adjust for that
+        // just copying target state, because there's no
+        // previous state to animate from
+        if new_state.id != curr_state.id {
+            self.prev_state = new_state.clone();
+            // but i can't leave prediction status the same... maybe there's a more right way to this
+            self.prev_state.status = curr_state.status.clone();
+        } else {
+            self.prev_state = curr_state.clone();
+        }
+
         self.next_state = new_state;
         self.next_state.outcomes.sort_by(|a, b| b.channel_points.cmp(&a.channel_points));
 
@@ -183,7 +255,7 @@ impl PredictionStateAnimator {
             }
 
             // gotta hide the element when prediction is finished, but only after a while
-            if self.next_state.status == PreditionStatus::Finished {
+            if self.next_state.status == PredictionStatus::Finished {
                 let show_element_setter = self.show_element_setter.clone();
 
                 self.hide_element_handle.replace(Some(Timeout::new(10_000, move || {
@@ -216,7 +288,7 @@ impl PredictionStateAnimator {
                 let mut intermediate_state = next_state.clone_with_empty_outcomes();
 
                 for outcome in next_state.outcomes.iter() {
-                    // outcomes can never be different; if a new event is fired, there must be a new animator
+                    // outcomes will never be different; we're taking care of that before
                     let prev_outcome = prev_state.outcomes.iter().find(
                         |&elem| elem.id == outcome.id
                     ).unwrap();
