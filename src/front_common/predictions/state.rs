@@ -80,6 +80,14 @@ impl PredictionState {
 
         return (((outcome.channel_points as f64) / (sum as f64)) * 100.0).round() as _;
     }
+
+    pub fn get_winner_idx(&self) -> Option<usize> {
+        if let Some(outcome_id) = &self.winning_outcome_id {
+            return self.outcomes.iter().position(|item| &item.id == outcome_id)
+        }
+
+        return None;
+    }
 }
 
 impl TryFrom<EventSubMessage> for PredictionState {
@@ -261,6 +269,18 @@ impl PredictionStateAnimator {
                 self.hide_element_handle.replace(Some(Timeout::new(10_000, move || {
                     show_element_setter.set(false);
                 })));
+
+                // also get the winner up top, make other options black(? we have other colors tho too, maybe can be improved)
+                if let Some(win_idx) = self.next_state.get_winner_idx() {
+                    self.next_state.outcomes.as_mut_slice()[0..win_idx].rotate_right(1);
+
+                    self.next_state.outcomes.iter_mut()
+                        .enumerate()
+                        .for_each(|(i, item)| if i != 0 { item.color = "black".to_string() } )
+                } else {
+                    self.next_state.outcomes.iter_mut()
+                        .for_each(|item| item.color = "black".to_string() )
+                }
             }
 
             // and this is the part that manipulates stuff to animate from one value to new one
