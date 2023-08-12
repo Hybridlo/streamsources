@@ -32,18 +32,18 @@ const PROD_BASE_URL: &str = "https://will_see.com";
 pub type RunningTests = dashmap::DashSet<String>;
 
 #[actix_web::main]
-async fn main() -> std::io::Result<()> {
+async fn main() {
     util::init_debug_log();
     util::init_dotenv();
 
     let db_pool = util::create_connection_pool()
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+        .expect("Unable to create DB pool");
 
     let redis_session = util::get_redis_session().await
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+        .expect("Unable to connect to Redis");
 
     let redis_pool = util::get_redis_client_pool()
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+        .expect("Unable to connect to Redis");
 
     let http_client = reqwest::Client::new();
 
@@ -57,14 +57,14 @@ async fn main() -> std::io::Result<()> {
         ],
         None,
         &mut *db_pool.get().await
-            .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?,
+            .expect("Unable to get DBConnection from Pool for subscription"),
         &redis_pool,
         &http_client
     )
         .await
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+        .expect("UserAuthorizationRevoke subscription failed");
 
-    HttpServer::new(move || {
+    _ = HttpServer::new(move || {
         App::new()
             .wrap(Logger::default())
             .wrap_api()
@@ -72,6 +72,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(Data::new(db_pool.clone()))
             .app_data(Data::new(redis_pool.clone()))
             .app_data(Data::new(http_client.clone()))
+            .app_data(util::Context::new())
             .app_data(Data::new(RunningTests::new()))
             .service(
                 web::scope("/api")
@@ -111,7 +112,8 @@ async fn main() -> std::io::Result<()> {
                 )
             ))
     })
-    .bind("127.0.0.1:80")?
+    .bind("127.0.0.1:80")
+    .expect("Server binding failed")
     .run()
-    .await
+    .await;
 }

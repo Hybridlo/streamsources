@@ -25,6 +25,12 @@ impl TypedSession {
     }
 }
 
+impl From<Session> for TypedSession {
+    fn from(session: Session) -> Self {
+        Self(session)
+    }
+}
+
 impl FromRequest for TypedSession {
     type Error = <Session as FromRequest>::Error;
     type Future = Ready<Result<TypedSession, Self::Error>>;

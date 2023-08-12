@@ -1,15 +1,15 @@
 use std::{future::{ready, Ready}, rc::Rc};
 
+use actix_session::SessionExt;
 use actix_web::{dev::{
     forward_ready, Service, ServiceRequest, ServiceResponse, Transform
-}, Error, web::Data};
-use actix_web::FromRequest;
+}, Error};
 use futures_util::future::LocalBoxFuture;
 use serde::Deserialize;
 
-use crate::{DbPool, errors::IntoResultMyErr};
+use crate::{errors::IntoResultMyErr, util::Context};
 use crate::errors::MyErrors;
-use crate::db::LoginToken;
+use crate::db::LoginTokenDb as _;
 use crate::util::session_state::TypedSession;
 
 pub struct QuickLoginFactory;
@@ -55,30 +55,22 @@ where
         let svc = self.service.clone();
 
         Box::pin(async move {
-            let db_pool = req
-                .app_data::<Data<DbPool>>()
+            let ctx = req
+                .app_data::<Context>()
                 .ok_or(MyErrors::InternalServerError("DB access error".to_string()))?;
-            let mut db_conn = db_pool.get().await.into_my()?;
-            
-            let (r, mut pl) = req.into_parts();
-            let query = r.query_string();
+            let session: TypedSession = req.get_session().into();
+            let query = req.query_string();
             
             // if there is no login token, or it's invalid - we just ignore it
             if let Ok(login_data) = serde_urlencoded::de::from_str::<LoginTokenQuery>(query) {
-                if let Ok(user_id) = LoginToken::validate_token(&login_data.login_token, &mut db_conn).await {
-                    if let Ok(session) = TypedSession::from_request(&r, &mut pl).await {
-                        
-                        if session.get_user_id()?.is_none() {
-                            session.renew();
-                            session
-                                .insert_user_id(user_id).into_my()?;
-                        }
-
+                if let Ok(user_id) = ctx.repository.validate_token(&login_data.login_token).await {
+                    if session.get_user_id()?.is_none() {
+                        session.renew();
+                        session
+                            .insert_user_id(user_id).into_my()?;
                     }
                 }
             }
-
-            let req = ServiceRequest::from_parts(r, pl);
 
             let fut = svc.call(req);
             let res = fut.await?;

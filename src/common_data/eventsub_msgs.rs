@@ -174,7 +174,6 @@ impl EventSubMessage {
     }
 }
 
-// making sure we can parse this stuff correctly, it will be big... maybe should be in a seperate file(s)?
 #[cfg(test)]
 mod tests {
     use super::{EventSubMessage, SubTypes};

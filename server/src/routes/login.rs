@@ -12,7 +12,8 @@ use crate::SCOPES;
 use crate::REDIRECT_URL;
 use crate::db::AuthState;
 use crate::db::TwitchUser;
-use crate::db::LoginToken;
+use crate::db::LoginTokenDb as _;
+use crate::util::Context;
 use crate::util::session_state::TypedSession;
 
 
@@ -128,12 +129,10 @@ pub struct LoginTokenResponse {
     token: String
 }
 #[api_v2_operation]
-pub async fn generate_login_token(session: TypedSession, db_pool: Data<DbPool>) -> Result<Json<LoginTokenResponse>, MyErrors> {
-    let mut db_conn = db_pool.get().await?;
-
+pub async fn generate_login_token(session: TypedSession, ctx: Context) -> Result<Json<LoginTokenResponse>, MyErrors> {
     let user_id = session.get_user_id()?.ok_or(MyErrors::AccessDenied)?;
 
-    let token = LoginToken::create_or_get_login_token(user_id, &mut db_conn).await.into_my()?;
+    let token = ctx.repository.create_or_get_login_token(user_id).await.into_my()?;
 
     Ok(Json(LoginTokenResponse { token }))
 }
