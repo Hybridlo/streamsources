@@ -1,4 +1,5 @@
 mod db;
+mod domain;
 mod util;
 mod errors;
 mod routes;

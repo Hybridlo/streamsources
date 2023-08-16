@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use diesel_async::{AsyncPgConnection, RunQueryDsl};
+use diesel_async::RunQueryDsl;
 use anyhow::Result;
 use rand::Rng;
 
@@ -23,21 +23,26 @@ struct LoginTokenNew {
 
 #[async_trait::async_trait(?Send)]
 pub trait LoginTokenDb {
-    async fn create_or_get_login_token(&self, user_id: i64) -> Result<String, DbError>;
-    async fn validate_token(&self, token: &str) -> Result<i64, DbError>;
+    async fn get_login_token(&self, user_id: i64) -> Result<String, DbError>;
+    async fn create_login_token(&self, user_id: i64) -> Result<String, DbError>;
+    async fn find_token(&self, token: &str) -> Result<i64, DbError>;
 }
 
 #[async_trait::async_trait(?Send)]
 impl LoginTokenDb for Repository {
-    async fn create_or_get_login_token(&self, user_id: i64) -> Result<String, DbError> {
+    async fn get_login_token(&self, user_id: i64) -> Result<String, DbError> {
         let mut db_conn = self.get_conn().await?;
-        // let's try to find existing one first
-        if let Ok(login_token) = quick_login_token::dsl::quick_login_token
-            .filter(quick_login_token::dsl::user_id.eq(user_id))
-            .first::<LoginToken>(&mut db_conn).await {
 
-            return Ok(login_token.token)
-        };
+        quick_login_token::dsl::quick_login_token
+            .filter(quick_login_token::dsl::user_id.eq(user_id))
+            .first::<LoginToken>(&mut db_conn)
+            .await
+            .map(|login_token| login_token.token)
+            .map_err(|_| DbError::Other)
+    }
+
+    async fn create_login_token(&self, user_id: i64) -> Result<String, DbError> {
+        let mut db_conn = self.get_conn().await?;
 
         let mut rng = rand::thread_rng();
         let login_token: String = (0..TOKEN_LENGTH).map(|_| rng.sample(rand::distributions::Alphanumeric) as char).collect();
@@ -50,7 +55,7 @@ impl LoginTokenDb for Repository {
         Ok(login_token)
     }
 
-    async fn validate_token(&self, token: &str) -> Result<i64, DbError> {
+    async fn find_token(&self, token: &str) -> Result<i64, DbError> {
         let mut db_conn = self.get_conn().await?;
 
         let login_token_item: LoginToken = quick_login_token::dsl::quick_login_token

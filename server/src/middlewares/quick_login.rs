@@ -9,7 +9,7 @@ use serde::Deserialize;
 
 use crate::{errors::IntoResultMyErr, util::Context};
 use crate::errors::MyErrors;
-use crate::db::LoginTokenDb as _;
+use crate::domain::login_token::LoginToken;
 use crate::util::session_state::TypedSession;
 
 pub struct QuickLoginFactory;
@@ -63,7 +63,7 @@ where
             
             // if there is no login token, or it's invalid - we just ignore it
             if let Ok(login_data) = serde_urlencoded::de::from_str::<LoginTokenQuery>(query) {
-                if let Ok(user_id) = ctx.repository.validate_token(&login_data.login_token).await {
+                if let Ok(user_id) = LoginToken::validate_user_token(&ctx.repository, &login_data.login_token).await {
                     if session.get_user_id()?.is_none() {
                         session.renew();
                         session
