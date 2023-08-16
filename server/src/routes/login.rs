@@ -10,8 +10,8 @@ use crate::errors::{e500, MyErrors};
 use crate::DbPool;
 use crate::SCOPES;
 use crate::REDIRECT_URL;
-use crate::db::AuthState;
 use crate::db::TwitchUser;
+use crate::domain::auth_state::AuthState;
 use crate::domain::login_token::LoginToken;
 use crate::util::Context;
 use crate::util::session_state::TypedSession;
@@ -45,11 +45,9 @@ pub struct LoginUrlRequest {
     callback_url: String
 }
 #[api_v2_operation]
-pub async fn login_url(request: HttpRequest, query: Query<LoginUrlRequest>, db_pool: Data<DbPool>) -> Result<Json<LoginUrlResponse>, actix_web::Error> {
-    let mut db_conn = db_pool.get().await.map_err(e500)?;
-
+pub async fn login_url(request: HttpRequest, query: Query<LoginUrlRequest>, ctx: Context) -> Result<Json<LoginUrlResponse>, actix_web::Error> {
     let full_uri = &query.callback_url;
-    let new_state = AuthState::get_new_state(full_uri, &mut db_conn).await.map_err(e500)?;
+    let new_state = AuthState::get_new_state(&ctx.repository, full_uri).await.map_err(e500)?;
     
     let host = request.connection_info().scheme().to_string() + "://" + request.connection_info().host();
     Ok(Json(LoginUrlResponse::new(&host, &new_state)))
@@ -68,11 +66,11 @@ pub async fn twitch_login_end(
     query: Query<LoginEndQuery>,
     session: TypedSession,
     db_pool: Data<DbPool>,
+    ctx: Context,
     http_client: Data<reqwest::Client>
 ) -> Result<HttpResponse, actix_web::Error> {
     let mut db_conn = db_pool.get().await.map_err(e500)?;
-    
-    let data = AuthState::check_state_and_get_data(&query.state, &mut db_conn).await;
+    let data = AuthState::check_state_and_get_data(&ctx.repository, &query.state).await;
 
     let host = request.connection_info().scheme().to_string() + "://" + request.connection_info().host();
     let mut response = HttpResponse::Ok();

@@ -106,7 +106,8 @@ pub struct SubData {
     pub cost: i64,
     pub condition: SubCondition,
     pub transport: SubTransport,
-    pub created_at: chrono::DateTime<chrono::Utc>
+    #[serde(with = "time::serde::rfc3339")]
+    pub created_at: time::OffsetDateTime,
 }
 #[derive(Deserialize)]
 struct SubResponse {

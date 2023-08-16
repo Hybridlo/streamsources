@@ -22,7 +22,7 @@ pub struct Subscription {
     #[diesel(deserialize_as = String)]
     type_: SubTypes,
     connected: bool,
-    inactive_since: chrono::NaiveDateTime
+    inactive_since: time::PrimitiveDateTime
 }
 
 #[derive(Insertable)]

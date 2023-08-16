@@ -2,7 +2,7 @@ use anyhow::Result;
 use deadpool_redis::Connection;
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
-use chrono::{offset::Utc, DateTime, Duration};
+use time::{OffsetDateTime, format_description::well_known::Rfc3339, Duration};
 
 use super::TWITCH_API_AUTH;
 
@@ -44,16 +44,17 @@ async fn new_token(redis_conn: &mut Connection, http_client: &reqwest::Client) -
     let response = serde_json::de::from_slice::<NewTokenResponse>(&*resp_bytes)?;
 
     redis_conn.set("twitch_app_access_token", &response.access_token).await?;
-    redis_conn.set("twitch_app_access_token_creation", &Utc::now().to_string()).await?;
+    redis_conn.set("twitch_app_access_token_creation", OffsetDateTime::now_utc().format(&Rfc3339).unwrap()).await?;
 
     Ok(response.access_token)
 }
 
 pub async fn get_app_token(redis_conn: &mut Connection, http_client: &reqwest::Client) -> Result<String> {
     if let Ok(val) = redis_conn.get::<_, String>("twitch_app_access_token_creation").await {
-        let datetime: DateTime<Utc> = val.parse()?;
+        let datetime = OffsetDateTime::parse(&val, &Rfc3339)
+            .expect("To parse datetime of app token fetch time");
         
-        if Utc::now() - datetime < Duration::days(1) {
+        if OffsetDateTime::now_utc() - datetime < Duration::days(1) {
             if let Ok(token) = redis_conn.get("twitch_app_access_token").await {
                 return Ok(token);
             }

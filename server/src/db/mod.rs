@@ -1,5 +1,5 @@
 mod schema;
-mod state;
+mod auth_state;
 mod users;
 mod login_token;
 mod subscription;
@@ -7,11 +7,11 @@ mod subscription;
 use diesel_async::AsyncPgConnection;
 use diesel_async::pooled_connection::deadpool::Object;
 use schema::twitch_users;
-use schema::auth_state;
+use schema::auth_state as db_auth_state;
 use schema::quick_login_token;
 use schema::subscription as db_subscription;
 
-pub use state::AuthState;
+pub use auth_state::AuthStateDb;
 pub use users::TwitchUser;
 pub use login_token::LoginTokenDb;
 pub use subscription::Subscription;

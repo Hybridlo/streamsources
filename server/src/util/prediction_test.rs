@@ -3,8 +3,8 @@ use std::sync::Arc;
 use anyhow::{Result, anyhow};
 use actix::{Actor, Context, WrapFuture, AsyncContext};
 use rand::Rng;
+use time::{OffsetDateTime, Duration, format_description::well_known::Rfc3339};
 use twitch_sources_rework::common_data::{EventSubMessage, EventSubData, PredictionsOutcome, TopPredictior, ChannelPredictionBegin, ChannelPredictionProgress, ChannelPredictionLock, ChannelPredictionEnd};
-use chrono::offset::Utc;
 use tokio::time::sleep as async_sleep;
 
 use crate::RunningTests;
@@ -28,9 +28,9 @@ async fn execute_test(user_id: &str) -> Result<()> {
     // prediction events
     let id: String = (0..10).map(|_| rng.sample(rand::distributions::Alphanumeric) as char).collect();
 
-    let start_time = Utc::now();
-    let lock_time = Utc::now() + chrono::Duration::seconds(TEST_TIME_SECONDS - 2);
-    let end_time = Utc::now() + chrono::Duration::seconds(TEST_TIME_SECONDS);
+    let start_time = OffsetDateTime::now_utc();
+    let lock_time = OffsetDateTime::now_utc() + Duration::seconds(TEST_TIME_SECONDS - 2);
+    let end_time = OffsetDateTime::now_utc() + Duration::seconds(TEST_TIME_SECONDS);
 
     let begin_msg = EventSubMessage {
         data: EventSubData::ChannelPredictionBegin(ChannelPredictionBegin {
@@ -73,10 +73,10 @@ async fn execute_test(user_id: &str) -> Result<()> {
                     top_predictors: vec![]
                 },
             ],
-            started_at: start_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
-            locks_at: lock_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+            started_at: start_time.format(&Rfc3339).unwrap(),
+            locks_at: lock_time.format(&Rfc3339).unwrap()
         }),
-        msg_time: Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+        msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&begin_msg).expect("No way we fail serialization");
     send_message(&mut conn, user_id, "predictions", &data).await?;
@@ -131,10 +131,10 @@ async fn execute_test(user_id: &str) -> Result<()> {
                     top_predictors: vec![]
                 },
             ],
-            started_at: start_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
-            locks_at: lock_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+            started_at: start_time.format(&Rfc3339).unwrap(),
+            locks_at: lock_time.format(&Rfc3339).unwrap()
         }),
-        msg_time: Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+        msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&progress_msg1).expect("No way we fail serialization");
     send_message(&mut conn, user_id, "predictions", &data).await?;
@@ -197,10 +197,10 @@ async fn execute_test(user_id: &str) -> Result<()> {
                     top_predictors: vec![]
                 },
             ],
-            started_at: start_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
-            locks_at: lock_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+            started_at: start_time.format(&Rfc3339).unwrap(),
+            locks_at: lock_time.format(&Rfc3339).unwrap()
         }),
-        msg_time: Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+        msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&progress_msg2).expect("No way we fail serialization");
     send_message(&mut conn, user_id, "predictions", &data).await?;
@@ -271,10 +271,10 @@ async fn execute_test(user_id: &str) -> Result<()> {
                     top_predictors: vec![]
                 },
             ],
-            started_at: start_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
-            locks_at: lock_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+            started_at: start_time.format(&Rfc3339).unwrap(),
+            locks_at: lock_time.format(&Rfc3339).unwrap()
         }),
-        msg_time: Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+        msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&progress_msg3).expect("No way we fail serialization");
     send_message(&mut conn, user_id, "predictions", &data).await?;
@@ -353,14 +353,14 @@ async fn execute_test(user_id: &str) -> Result<()> {
                     ]
                 },
             ],
-            started_at: start_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
-            locks_at: lock_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+            started_at: start_time.format(&Rfc3339).unwrap(),
+            locks_at: lock_time.format(&Rfc3339).unwrap()
         }),
-        msg_time: Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+        msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&progress_msg4).expect("No way we fail serialization");
     send_message(&mut conn, user_id, "predictions", &data).await?;
-    async_sleep((lock_time - Utc::now()).to_std().unwrap_or_default()).await;
+    async_sleep((lock_time - OffsetDateTime::now_utc()).try_into().unwrap()).await;
 
     let lock_msg = EventSubMessage {
         data: EventSubData::ChannelPredictionLock(ChannelPredictionLock {
@@ -435,14 +435,14 @@ async fn execute_test(user_id: &str) -> Result<()> {
                     ]
                 },
             ],
-            started_at: start_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
-            locked_at: lock_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
+            started_at: start_time.format(&Rfc3339).unwrap(),
+            locked_at: lock_time.format(&Rfc3339).unwrap()
         }),
-        msg_time: Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+        msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&lock_msg).expect("No way we fail serialization");
     send_message(&mut conn, user_id, "predictions", &data).await?;
-    async_sleep((end_time - Utc::now()).to_std().unwrap_or_default()).await;
+    async_sleep((end_time - OffsetDateTime::now_utc()).try_into().unwrap()).await;
 
     let end_msg = EventSubMessage {
         data: EventSubData::ChannelPredictionEnd(ChannelPredictionEnd {
@@ -517,12 +517,12 @@ async fn execute_test(user_id: &str) -> Result<()> {
                     ]
                 },
             ],
-            started_at: start_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
-            ended_at: end_time.to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+            started_at: start_time.format(&Rfc3339).unwrap(),
+            ended_at: end_time.format(&Rfc3339).unwrap(),
             winning_outcome_id: Some("1243456".to_string()),
             status: "resolved".to_string(),
         }),
-        msg_time: Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true),
+        msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&end_msg).expect("No way we fail serialization");
     send_message(&mut conn, user_id, "predictions", &data).await?;

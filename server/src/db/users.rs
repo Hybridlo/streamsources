@@ -25,8 +25,8 @@ pub struct TwitchUser {
     pub username: String,
     pub access_token: String,
     pub refresh_token: String,
-    pub creation: chrono::NaiveDateTime,
-    pub last_login: chrono::NaiveDateTime,
+    pub creation: time::PrimitiveDateTime,
+    pub last_login: time::PrimitiveDateTime,
     pub expires_in: i32,
     pub scopes: Vec<Option<String>>,
     pub broadcaster_type: String

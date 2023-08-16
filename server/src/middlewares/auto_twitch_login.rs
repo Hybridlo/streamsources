@@ -7,7 +7,8 @@ use actix_web::FromRequest;
 use futures_util::future::LocalBoxFuture;
 use twitch_sources_rework::TWITCH_AUTH_URL;
 
-use crate::{DbPool, db::AuthState, routes::LoginUrlResponse, errors::{MyErrors, IntoResultMyErr}, util::session_state::TypedSession};
+use crate::{DbPool, routes::LoginUrlResponse, errors::{MyErrors, IntoResultMyErr}, util::{session_state::TypedSession, Context}};
+use crate::domain::auth_state::AuthState;
 
 pub struct AutoTwitchLoginFactory;
 impl<S, B> Transform<S, ServiceRequest> for AutoTwitchLoginFactory
@@ -70,8 +71,10 @@ where
                 .ok_or(MyErrors::InternalServerError("DB access error".to_string()))?;
             let mut db_conn = db_pool.get().await.into_my()?;
 
+            let ctx = req.app_data::<Context>().ok_or(MyErrors::InternalServerError("DB access error".to_string()))?;
+
             let full_uri = req.uri().to_string();
-            let new_state = AuthState::get_new_state(&full_uri, &mut db_conn).await
+            let new_state = AuthState::get_new_state(&ctx.repository, &full_uri).await
                 .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;
             let host = req.connection_info().scheme().to_string() + "://" + req.connection_info().host();
 
