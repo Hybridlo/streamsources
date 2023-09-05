@@ -6,23 +6,23 @@ use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use twitch_sources_rework::common_data::SubTypes;
 
-use crate::{twitch_api::subscribe, RedisPool};
+use crate::{twitch_api::{subscribe, SubData}, RedisPool};
 
-use super::db_subscription;
+use super::{db_subscription, DbError, Repository};
 
 
 type HmacSha256 = Hmac<Sha256>;
 
 #[derive(Queryable)]
 pub struct Subscription {
-    id: i64,
-    user_id: Option<i64>,
-    secret: String,
-    sub_id: String,
+    pub id: i64,
+    pub user_id: Option<i64>,
+    pub secret: String,
+    pub sub_id: String,
     #[diesel(deserialize_as = String)]
-    type_: SubTypes,
-    connected: bool,
-    inactive_since: time::PrimitiveDateTime
+    pub type_: SubTypes,
+    pub connected: bool,
+    pub inactive_since: time::PrimitiveDateTime
 }
 
 #[derive(Insertable)]
@@ -34,38 +34,38 @@ struct SubscriptionNew {
     type_: String,
 }
 
-impl Subscription {
-    pub async fn get_or_create_subscriptions(
-        sub_types: Vec<SubTypes>,
-        user_id: Option<i64>,
-        db_conn: &mut AsyncPgConnection,
-        redis_pool: &RedisPool,
-        http_client: &reqwest::Client
-    ) -> Result<Vec<Subscription>> {
+#[async_trait::async_trait(?Send)]
+pub trait SubscriptionDb {
+    async fn get_subscriptions(&self, sub_types: &[SubTypes], user_id: Option<i64>) -> Result<Vec<Subscription>, DbError>;
+    async fn create_subscriptions(&self, new_subs: Vec<SubData>, user_id: Option<i64>) -> Result<Vec<Subscription>, DbError>;
+    async fn get_subscription(&self, sub_id: &str) -> Result<Option<Subscription>, DbError>;
+    async fn remove_subscription(&self, sub_id: &str) -> Result<(), DbError>;
+}
 
-        let existing_subs: Vec<Subscription> = match user_id {
+#[async_trait::async_trait(?Send)]
+impl SubscriptionDb for Repository {
+    async fn get_subscriptions(&self, sub_types: &[SubTypes], user_id: Option<i64>) -> Result<Vec<Subscription>, DbError> {
+        let mut db_conn = self.get_conn().await?;
+
+        Ok(match user_id {
             Some(user_id) => db_subscription::dsl::subscription
                 .filter(db_subscription::dsl::type_.eq_any(sub_types.iter().map(ToString::to_string)))
                 .filter(db_subscription::dsl::user_id.eq(user_id))
-                .load::<Subscription>(db_conn)
-                .await?
-            ,
+                .load::<Subscription>(&mut db_conn)
+                .await
+                .map_err(|_| DbError::Other)?,
+
             None => db_subscription::dsl::subscription
                 .filter(db_subscription::dsl::type_.eq_any(sub_types.iter().map(ToString::to_string)))
-                .load::<Subscription>(db_conn)
-                .await?
-            ,
-        };
-        
-        let mut new_subs = Vec::new();
-        
-        for sub_type in sub_types.iter() {
-            if !existing_subs.iter().any(|sub| &sub.type_ == sub_type) {
-                new_subs.push(subscribe(sub_type, user_id, redis_pool.get().await?, http_client))
-            }
-        }
+                .load::<Subscription>(&mut db_conn)
+                .await
+                .map_err(|_| DbError::Other)?,
+        })
+    }
 
-        let new_subs = try_join_all(new_subs).await?;
+    async fn create_subscriptions(&self, new_subs: Vec<SubData>, user_id: Option<i64>) -> Result<Vec<Subscription>, DbError> {
+        let mut db_conn = self.get_conn().await?;
+
         let new_subs = new_subs.into_iter().map(|item| SubscriptionNew {
             user_id,
             secret: item.transport.secret.expect("To have the secret"),
@@ -73,36 +73,29 @@ impl Subscription {
             type_: item.type_.to_string(),
         }).collect::<Vec<_>>();
 
-        let new_subs: Vec<Subscription> = diesel::insert_into(db_subscription::dsl::subscription)
+        diesel::insert_into(db_subscription::dsl::subscription)
             .values(&new_subs)
-            .get_results::<Subscription>(db_conn).await?;
-
-        Ok(existing_subs.into_iter().chain(new_subs.into_iter()).collect())
+            .get_results::<Subscription>(&mut db_conn).await
+            .map_err(|_| DbError::Other)
     }
+    
+    async fn get_subscription(&self, sub_id: &str) -> Result<Option<Subscription>, DbError> {
+        let mut db_conn = self.get_conn().await?;
 
-    pub async fn get_subscription(sub_id: &str, db_conn: &mut AsyncPgConnection) -> Result<Option<Subscription>> {
-        Ok(db_subscription::dsl::subscription
+        db_subscription::dsl::subscription
             .filter(db_subscription::dsl::sub_id.eq(sub_id))
-            .first::<Subscription>(db_conn).await.optional()?)
+            .first::<Subscription>(&mut db_conn).await.optional()
+            .map_err(|_| DbError::Other)
     }
 
-    pub async fn remove_subscription(sub_id: &str, db_conn: &mut AsyncPgConnection) -> Result<()> {
+    async fn remove_subscription(&self, sub_id: &str) -> Result<(), DbError> {
+        let mut db_conn = self.get_conn().await?;
+
         diesel::delete(db_subscription::dsl::subscription
             .filter(db_subscription::dsl::sub_id.eq(sub_id)))
-            .execute(db_conn).await?;
+            .execute(&mut db_conn).await
+            .map_err(|_| DbError::Other)?;
 
         Ok(())
-    }
-
-    pub fn verify_msg(&self, msg: &[u8], expected_signature: &[u8]) -> bool {
-        let mut hasher = HmacSha256::new_from_slice(self.secret.as_bytes()).expect("HMAC can take key of any size");
-
-        hasher.update(msg);
-        let res_hash = [
-            b"sha256=",
-            hex::encode(&*hasher.finalize().into_bytes()).as_bytes()
-        ].concat();
-
-        return res_hash == expected_signature
     }
 }

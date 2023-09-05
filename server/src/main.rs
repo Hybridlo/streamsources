@@ -46,19 +46,20 @@ async fn main() {
     let redis_pool = util::get_redis_client_pool()
         .expect("Unable to connect to Redis");
 
+    let context = util::Context::new();
+
     let http_client = reqwest::Client::new();
 
     let secret_key_val = std::env::var("SECRET").expect("SECRET must be set");
     let secret_key = Key::from(secret_key_val.as_bytes());
 
     // check and create needed subscriptions
-    db::Subscription::get_or_create_subscriptions(
+    domain::subscription::Subscription::get_or_create_subscriptions(
+        &context.repository,
         vec![
             SubTypes::UserAuthorizationRevoke
         ],
         None,
-        &mut *db_pool.get().await
-            .expect("Unable to get DBConnection from Pool for subscription"),
         &redis_pool,
         &http_client
     )
@@ -73,7 +74,7 @@ async fn main() {
             .app_data(Data::new(db_pool.clone()))
             .app_data(Data::new(redis_pool.clone()))
             .app_data(Data::new(http_client.clone()))
-            .app_data(util::Context::new())
+            .app_data(context.clone())
             .app_data(Data::new(RunningTests::new()))
             .service(
                 web::scope("/api")

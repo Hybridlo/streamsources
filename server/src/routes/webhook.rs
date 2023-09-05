@@ -9,12 +9,14 @@ use serde_json::Value;
 use twitch_sources_rework::common_data::EventSubMessage;
 
 use crate::RedisPool;
-use crate::db::Subscription;
+use crate::domain::subscription::GetSub;
+use crate::domain::subscription::Subscription;
 use crate::errors::IntoResultMyErr;
 use crate::errors::MyErrors;
 use crate::DbPool;
 use crate::twitch_api::SubData;
 use crate::twitch_api::handle_message;
+use crate::util::Context;
 
 #[derive(Deserialize)]
 #[serde(rename_all="snake_case")]
@@ -30,13 +32,13 @@ pub struct WebhookRequestData {
     type_: WebhookRequestType
 }
 
-pub async fn webhook(request: HttpRequest, body: Bytes, db_pool: Data<DbPool>, redis_pool: Data<RedisPool>) -> Result<HttpResponse, MyErrors> {    
+pub async fn webhook(request: HttpRequest, body: Bytes, ctx: Context, db_pool: Data<DbPool>, redis_pool: Data<RedisPool>) -> Result<HttpResponse, MyErrors> {
     let mut db_conn = db_pool.get().await?;
     let mut redis_conn = redis_pool.get().await?;
     // can't have both Json<> and Bytes parameters, only first parameter will be populated
     let post = serde_json::de::from_slice::<WebhookRequestData>(&*body)?;
 
-    let sub = Subscription::get_subscription(&post.subscription.id, &mut db_conn).await.into_my()?;
+    let sub = Subscription::get_subscription(&ctx.repository, &post.subscription.id).await;
 
     let msg_type = request
         .headers()
@@ -52,7 +54,7 @@ pub async fn webhook(request: HttpRequest, body: Bytes, db_pool: Data<DbPool>, r
 
     // this part checks for all unhappy paths and ends the function
     match sub {
-        Some(sub) => {
+        Ok(sub) => {
             let msg_id = request
                 .headers()
                 .get("Twitch-Eventsub-Message-Id")
@@ -69,15 +71,16 @@ pub async fn webhook(request: HttpRequest, body: Bytes, db_pool: Data<DbPool>, r
                 return Err(MyErrors::AccessDenied)
             }
         },
-        None => if msg_type == b"revocation" {
+        Err(GetSub::NotFound) if msg_type == b"revocation" => {
             return Ok(HttpResponse::Accepted().body(""))
-        } else {
+        },
+        _ => {
             return Err(MyErrors::InternalServerError("Something went wrong!".to_string()));
         },
     };
 
     if msg_type == b"revocation" {
-        Subscription::remove_subscription(&post.subscription.id, &mut db_conn).await.into_my()?;
+        Subscription::remove_subscription(&ctx.repository, &post.subscription.id).await.into_my()?;
         return Ok(HttpResponse::Accepted().body(""));
     }
     

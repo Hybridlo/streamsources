@@ -14,6 +14,7 @@ use schema::subscription as db_subscription;
 pub use auth_state::AuthStateDb;
 pub use users::TwitchUser;
 pub use login_token::LoginTokenDb;
+pub use subscription::SubscriptionDb;
 pub use subscription::Subscription;
 
 use thiserror::Error;
