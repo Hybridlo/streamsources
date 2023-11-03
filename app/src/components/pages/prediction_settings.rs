@@ -132,7 +132,7 @@ pub fn predictions_settings() -> Html {
                         <StaticSourceLink<PredictionsSourceOptions> options={collected_options.clone()} source_name={"predictions"} skin={chosen_skin.to_string()} />
                     </div>
                     <div>
-                        <h5 class="text-center mb-2">{ "User-specific link" }</h5>
+                        <h5 class="text-center mb-2">{ "User-specific link (better to use in OBS)" }</h5>
                         { 
                             login_gate(html!{
                                 <LoginSourceLink<PredictionsSourceOptions> options={collected_options.clone()} source_name={"predictions"} skin={chosen_skin.to_string()} />

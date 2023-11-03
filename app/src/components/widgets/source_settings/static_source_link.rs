@@ -2,6 +2,7 @@ use std::{rc::Rc, cell::RefCell};
 
 use gloo_timers::callback::Timeout;
 use serde::Serialize;
+use web_sys::Element;
 use yew::prelude::*;
 use yew_hooks::use_clipboard;
 
@@ -24,12 +25,40 @@ pub fn static_source_link<T: Serialize + PartialEq>(props: &SourceLinkProps<T>) 
 
     let copy_timer: Rc<RefCell<Option<Timeout>>> = use_mut_ref(|| None);
     let copy_button_text = use_state(|| "Copy");
+    let copy_button_width = use_state_eq(|| 0);
+    let button_ref = use_node_ref();
+
+    let update_copy_button_data = {
+        let button_ref = button_ref.clone();
+        let copy_button_text = copy_button_text.clone();
+        let copy_button_width = copy_button_width.clone();
+
+        move |new_text| {
+            let button_ref = button_ref.clone();
+            let copy_button_text = copy_button_text.clone();
+            let copy_button_width = copy_button_width.clone();
+            copy_button_text.set(new_text);
+            Timeout::new(0, move || {
+                copy_button_width.set(button_ref.cast::<Element>().unwrap().client_width());
+            }).forget();
+        }
+    };
+
+    {
+        let update_copy_button_data = update_copy_button_data.clone();
+        use_effect_with_deps(
+            move |_| {
+                update_copy_button_data("Copy");
+                || ()
+            },
+            button_ref.clone()
+        );
+    }
 
     let copy_click_callback = {
         let href = href.clone();
         let clipboard_handle = clipboard_handle.clone();
         let copy_timer = copy_timer.clone();
-        let copy_button_text = copy_button_text.clone();
         let options_encoded = options_encoded.clone();
 
         let source_name = props.source_name;
@@ -45,15 +74,15 @@ pub fn static_source_link<T: Serialize + PartialEq>(props: &SourceLinkProps<T>) 
                     + "?" + &options_encoded
             );
             
-            copy_button_text.set("Copied!");
+            update_copy_button_data("Copied!");
 
             if let Some(copy_timer) = (copy_timer).take() {
                 copy_timer.cancel();
             }
             let timeout = {
-                let copy_button_text = copy_button_text.clone();
+                let update_copy_button_data = update_copy_button_data.clone();
                 Timeout::new(2_000, move || {
-                    copy_button_text.set("Copy");
+                    update_copy_button_data("Copy");
                 })
             };
             copy_timer.replace(Some(timeout));
@@ -62,7 +91,13 @@ pub fn static_source_link<T: Serialize + PartialEq>(props: &SourceLinkProps<T>) 
 
     html! {
         <div class="container input-group mb-3">
-            <input id="srcLink" type="text" class="form-control text-center" readonly=true aria-label="Source link" aria-describedby="button-addon2"
+            <input
+                type="text"
+                class="form-control text-center"
+                readonly=true
+                aria-label="Source link"
+                aria-describedby="button-addon2"
+                style={"padding-right: 0; padding-left: ".to_string() + &format!("{}", *copy_button_width) + "px;"}
                 placeholder={
                     href.clone() + "/sources"
                     + "/" + &props.source_name
@@ -70,7 +105,7 @@ pub fn static_source_link<T: Serialize + PartialEq>(props: &SourceLinkProps<T>) 
                     + "?" + &options_encoded
                 }
             />
-            <button class="btn btn-outline-secondary" type="button" id="srcCopy"
+            <button class="btn btn-outline-secondary" type="button" id="srcCopy" ref={button_ref}
                 onclick={copy_click_callback}
             >{ *copy_button_text }</button>
         </div>

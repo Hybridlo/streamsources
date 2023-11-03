@@ -236,8 +236,8 @@ pub fn carousel(props: &CarouselProps) -> Html {
                 class="btn btn-light rounded-circle border-dark arrow-button arrow-back"
                 onclick={partial_click_cb(-1)}
                 disabled={animation.borrow().is_some()}
-                >{back_arrow}</button>
-                <button
+            >{back_arrow}</button>
+            <button
                 class="btn btn-light rounded-circle border-dark arrow-button arrow-forward"
                 onclick={partial_click_cb(1)}
                 disabled={animation.borrow().is_some()}
