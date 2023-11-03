@@ -56,7 +56,7 @@ fn status(status: &PredictionStatus, lock_time: &DateTime<Utc>) -> Html {
 
 fn options_list(state: &PredictionState) -> Html {
     html! {
-        <div>
+        <div class="options-wrapper">
             {
                 state.outcomes.iter().map(
                     |option| html! {
@@ -85,6 +85,7 @@ pub fn predictions_list(props: &PredictionsProps) -> Html {
             --outlines-opposite: ${outline_color_opposite};
 
             & .element {
+                width: min-content;
                 transition: opacity 400ms ease-out;
             }
 
@@ -109,6 +110,7 @@ pub fn predictions_list(props: &PredictionsProps) -> Html {
             }
 
             & .title {
+                max-width: fit-content;
                 color: var(--outlines);
                 -webkit-text-stroke: 0.6px var(--outlines-opposite);
                 font-size: 20px;
@@ -120,6 +122,10 @@ pub fn predictions_list(props: &PredictionsProps) -> Html {
                 font-size: 16px;
                 font-weight: bold;
                 -webkit-text-stroke: 0.6px var(--outlines-opposite);
+            }
+
+            & .options-wrapper {
+                width: max-content;
             }
             
             & .option {
@@ -155,9 +161,7 @@ pub fn predictions_list(props: &PredictionsProps) -> Html {
     scalable_wrapper(html! {
         <div class={classes!(css)}>
             <div class={if *props.show_element_state {"element show"} else {"element hide"}}>
-                <div>
-                    { title(&props.state.title) }
-                </div>
+                { title(&props.state.title) }
                 <div class={if *props.show_status_state {"status show"} else {"status hide"}}>
                     { status(&props.status_state, &props.state.lock_time) }
                 </div>
