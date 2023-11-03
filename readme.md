@@ -6,6 +6,12 @@ Running this in debug requires ngrok (or any other proxy that allows for HTTPS t
 
 The application uses a PostgreSQL as a database and Redis for PubSub
 
+Server to client communication is managed thanks to [paperclip](https://github.com/paperclip-rs/paperclip) and [openapi generator](https://github.com/OpenAPITools/openapi-generator-cli) on client (needs to be installed)
+
+Needs rust wasm compilation target installed
+
+Also requires [diesel_cli](https://crates.io/crates/diesel_cli), [cargo watch](https://crates.io/crates/cargo-watch) and [trunk](https://crates.io/crates/trunk)
+
 And, of course, you'll need a third party application created on https://dev.twitch.tv
 
 ## Setup

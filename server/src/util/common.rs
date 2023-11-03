@@ -12,7 +12,7 @@ pub type RedisPool = deadpool_redis::Pool;
 pub type DbPool = deadpool::Pool<AsyncPgConnection>;
 
 pub fn init_dotenv() {
-    dotenv().ok();
+    dotenv().expect("Dotenv to succeed");
 }
 
 pub fn create_connection_pool() -> Result<DbPool> {
