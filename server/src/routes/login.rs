@@ -1,19 +1,19 @@
 use actix_web::HttpRequest;
 use actix_web::HttpResponse;
 use actix_web::http::{header, StatusCode};
-use actix_web::web::{Data, Json, Query};
+use actix_web::web::{Json, Query};
 use paperclip::actix::{Apiv2Schema, api_v2_operation};
 use serde::{Serialize, Deserialize};
 
+use crate::domain::users::TwitchUser;
 use crate::errors::IntoResultMyErr;
 use crate::errors::{e500, MyErrors};
-use crate::DbPool;
 use crate::SCOPES;
 use crate::REDIRECT_URL;
-use crate::db::TwitchUser;
 use crate::domain::auth_state::AuthState;
 use crate::domain::login_token::LoginToken;
 use crate::util::Context;
+use crate::util::get_twitch_key;
 use crate::util::session_state::TypedSession;
 
 
@@ -28,7 +28,7 @@ pub struct LoginUrlResponse {
 
 impl LoginUrlResponse {
     pub fn new(host: &str, state: &str) -> Self {
-        let twitch_key = std::env::var("TWITCH_KEY").expect("TWITCH_KEY must be set");
+        let twitch_key = get_twitch_key();
 
         Self {
             client_id: twitch_key,
@@ -65,11 +65,8 @@ pub async fn twitch_login_end(
     request: HttpRequest,
     query: Query<LoginEndQuery>,
     session: TypedSession,
-    db_pool: Data<DbPool>,
     ctx: Context,
-    http_client: Data<reqwest::Client>
 ) -> Result<HttpResponse, actix_web::Error> {
-    let mut db_conn = db_pool.get().await.map_err(e500)?;
     let data = AuthState::check_state_and_get_data(&ctx.repository, &query.state).await;
 
     let host = request.connection_info().scheme().to_string() + "://" + request.connection_info().host();
@@ -77,7 +74,7 @@ pub async fn twitch_login_end(
 
     match data {
         Ok(data) => {
-            let user = TwitchUser::update_or_create_and_get_user(&query.code, &host, &http_client, &mut db_conn)
+            let user = TwitchUser::update_or_create_and_get_user(&ctx, &query.code, &host)
                 .await.map_err(e500)?;
 
             session.renew();
@@ -109,12 +106,10 @@ pub struct UserInfo {
     username: String
 }
 #[api_v2_operation]
-pub async fn login_check(session: TypedSession, db_pool: Data<DbPool>) -> Result<Json<UserInfo>, MyErrors> {
-    let mut db_conn = db_pool.get().await?;
-
+pub async fn login_check(session: TypedSession, ctx: Context) -> Result<Json<UserInfo>, MyErrors> {
     match session.get_user_id()? {
         Some(user_id) => {
-            let username = TwitchUser::get_user(user_id, &mut db_conn).await.into_my()?
+            let username = TwitchUser::get_user(&ctx, user_id).await.into_my()?
                 .ok_or(MyErrors::AccessDenied)?.username;
             Ok(Json(UserInfo { username }))
         },

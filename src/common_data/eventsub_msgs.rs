@@ -100,7 +100,7 @@ pub enum EventSubData {
 
 // discriminator for supported types
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
-pub enum SubTypes {
+pub enum SubType {
     #[serde(rename="user.authorization.revoke")]
     UserAuthorizationRevoke,
     #[serde(rename="channel.prediction.begin")]
@@ -113,13 +113,13 @@ pub enum SubTypes {
     ChannelPredictionEnd
 }
 
-impl ToString for SubTypes {
+impl ToString for SubType {
     fn to_string(&self) -> String {
         serde_json::ser::to_string(self).expect("Serialization shouldn't fail")
     }
 }
 
-impl TryFrom<String> for SubTypes {
+impl TryFrom<String> for SubType {
     type Error = anyhow::Error;
 
     fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
@@ -134,25 +134,25 @@ pub struct EventSubMessage {
 }
 
 impl EventSubMessage {
-    pub fn new(msg_type: &SubTypes, msg_time: &str, data: serde_json::Value) -> Result<EventSubMessage> {
+    pub fn new(msg_type: &SubType, msg_time: &str, data: serde_json::Value) -> Result<EventSubMessage> {
         let res = match msg_type {
-            SubTypes::UserAuthorizationRevoke => EventSubMessage {
+            SubType::UserAuthorizationRevoke => EventSubMessage {
                 data: EventSubData::UserAuthorizationRevoke(serde_json::de::from_str(&data.to_string())?),
                 msg_time: msg_time.to_string()
             },
-            SubTypes::ChannelPredictionBegin => EventSubMessage {
+            SubType::ChannelPredictionBegin => EventSubMessage {
                 data: EventSubData::ChannelPredictionBegin(serde_json::de::from_str(&data.to_string())?),
                 msg_time: msg_time.to_string()
             },
-            SubTypes::ChannelPredictionProgress => EventSubMessage {
+            SubType::ChannelPredictionProgress => EventSubMessage {
                 data: EventSubData::ChannelPredictionProgress(serde_json::de::from_str(&data.to_string())?),
                 msg_time: msg_time.to_string()
             },
-            SubTypes::ChannelPredictionLock => EventSubMessage {
+            SubType::ChannelPredictionLock => EventSubMessage {
                 data: EventSubData::ChannelPredictionLock(serde_json::de::from_str(&data.to_string())?),
                 msg_time: msg_time.to_string()
             },
-            SubTypes::ChannelPredictionEnd => EventSubMessage {
+            SubType::ChannelPredictionEnd => EventSubMessage {
                 data: EventSubData::ChannelPredictionEnd(serde_json::de::from_str(&data.to_string())?),
                 msg_time: msg_time.to_string()
             },
@@ -176,7 +176,7 @@ impl EventSubMessage {
 
 #[cfg(test)]
 mod tests {
-    use super::{EventSubMessage, SubTypes};
+    use super::{EventSubMessage, SubType};
 
     mod user_authorization_revoke {
         use super::*;
@@ -190,7 +190,7 @@ mod tests {
                 "user_name": "Cool_User"
             });
     
-            let res = EventSubMessage::new(&SubTypes::UserAuthorizationRevoke, "", json_val);
+            let res = EventSubMessage::new(&SubType::UserAuthorizationRevoke, "", json_val);
             assert!(res.is_ok(), "Expected `UserAuthorizationRevoke` to parse, got {:?}", res);
         }
     }
@@ -214,7 +214,7 @@ mod tests {
                 "locks_at": "2020-07-15T17:21:03.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionBegin, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionBegin, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionBegin` to parse, got {:?}", res);
         }
     }
@@ -275,7 +275,7 @@ mod tests {
                 "locks_at": "2020-07-15T17:21:03.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionProgress, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionProgress, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionProgress` to parse, got {:?}", res);
         }
     
@@ -324,7 +324,7 @@ mod tests {
                 "locks_at": "2020-07-15T17:21:03.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionProgress, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionProgress, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionProgress` to parse, got {:?}", res);
         }
     
@@ -366,7 +366,7 @@ mod tests {
                 "locks_at": "2020-07-15T17:21:03.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionProgress, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionProgress, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionProgress` to parse, got {:?}", res);
         }
     }
@@ -427,7 +427,7 @@ mod tests {
                 "locked_at": "2020-07-15T17:21:03.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionLock, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionLock, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionLock` to parse, got {:?}", res);
         }
     
@@ -476,7 +476,7 @@ mod tests {
                 "locked_at": "2020-07-15T17:21:03.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionLock, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionLock, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionLock` to parse, got {:?}", res);
         }
 
@@ -518,7 +518,7 @@ mod tests {
                 "locked_at": "2020-07-15T17:21:03.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionLock, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionLock, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionLock` to parse, got {:?}", res);
         }
     }
@@ -588,7 +588,7 @@ mod tests {
                 "ended_at": "2020-07-15T17:16:11.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionEnd, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionEnd` to parse, got {:?}", res);
         }
     
@@ -639,7 +639,7 @@ mod tests {
                 "ended_at": "2020-07-15T17:16:11.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionEnd, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionEnd` to parse, got {:?}", res);
         }
     
@@ -690,7 +690,7 @@ mod tests {
                 "ended_at": "2020-07-15T17:16:11.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionEnd, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionEnd` to parse, got {:?}", res);
         }
     
@@ -756,7 +756,7 @@ mod tests {
                 "ended_at": "2020-07-15T17:16:11.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionEnd, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionEnd` to parse, got {:?}", res);
         }
     
@@ -807,7 +807,7 @@ mod tests {
                 "ended_at": "2020-07-15T17:16:11.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionEnd, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionEnd` to parse, got {:?}", res);
         }
     
@@ -858,7 +858,7 @@ mod tests {
                 "ended_at": "2020-07-15T17:16:11.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionEnd, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionEnd` to parse, got {:?}", res);
         }
     
@@ -894,7 +894,7 @@ mod tests {
                 "ended_at": "2020-07-15T17:16:11.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionEnd, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionEnd` to parse, got {:?}", res);
         }
     
@@ -930,7 +930,7 @@ mod tests {
                 "ended_at": "2020-07-15T17:16:11.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionEnd, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionEnd` to parse, got {:?}", res);
         }
     
@@ -996,7 +996,7 @@ mod tests {
                 "ended_at": "2020-07-15T17:16:11.17106713Z"
             });
     
-            let res = EventSubMessage::new(&SubTypes::ChannelPredictionEnd, "", json_val);
+            let res = EventSubMessage::new(&SubType::ChannelPredictionEnd, "", json_val);
             assert!(res.is_ok(), "Expected `ChannelPredictionEnd` to parse, got {:?}", res);
         }
     }

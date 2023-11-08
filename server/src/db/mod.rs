@@ -13,9 +13,11 @@ use schema::subscription as db_subscription;
 
 pub use auth_state::AuthStateDb;
 pub use users::TwitchUser;
+pub use users::NewTwitchUser;
+pub use users::TwitchUserDb;
 pub use login_token::LoginTokenDb;
-pub use subscription::SubscriptionDb;
 pub use subscription::Subscription;
+pub use subscription::SubscriptionDb;
 
 use thiserror::Error;
 
@@ -32,7 +34,7 @@ impl Repository {
         Self { pool }
     }
 
-    pub async fn get_conn(&self) -> Result<Object<AsyncPgConnection>, DbError> {
+    pub async fn get_conn(&self) -> ResultDb<Object<AsyncPgConnection>> {
         self.pool.get().await.map_err(|_| DbError::Other)
     }
 }
@@ -48,6 +50,8 @@ pub enum DbError {
     #[error("Other DB error")]
     Other
 }
+
+pub type ResultDb<T> = Result<T, DbError>;
 
 /* impl<T> IntoResultMyErr<T> for DbError {
     fn into_my(res: Result<T, Self>) -> Result<T, MyErrors> {

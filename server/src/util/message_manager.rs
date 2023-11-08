@@ -1,8 +1,6 @@
 use actix::AsyncContext;
 use futures::Stream;
 use anyhow::Result;
-use redis::AsyncCommands;
-use redis::aio::ConnectionLike;
 use redis::Msg;
 
 use actix::{Actor, StreamHandler, WrapFuture, Message, Handler};
@@ -10,15 +8,6 @@ use futures::StreamExt;
 use actix_web_actors::ws;
 
 use crate::util::get_redis_connection;
-
-pub async fn send_message<T>(conn: &mut T, user_id: &str, topic: &str, message: &[u8]) -> Result<()>
-where
-    T: ConnectionLike + Send
-{
-    conn.publish(user_id.to_string() + ":" + topic, message).await?;
-
-    Ok(())
-}
 
 // all the stuff for websocket
 async fn subscribe(user_id: i64, topic: &str) -> Result<impl Stream<Item = Msg>> {

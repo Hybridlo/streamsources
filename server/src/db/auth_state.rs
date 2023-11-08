@@ -1,9 +1,10 @@
+use auto_delegate::delegate;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
 
 use crate::domain::auth_state::STATE_TIMEOUT;
 
-use super::{db_auth_state, DbError, Repository};
+use super::{db_auth_state, DbError, Repository, ResultDb};
 
 #[derive(Queryable)]
 pub struct AuthState {
@@ -25,14 +26,15 @@ struct AuthStateNew {
 }
 
 #[async_trait::async_trait(?Send)]
+#[delegate]
 pub trait AuthStateDb {
-    async fn get_state(&self, auth_state: &str) -> Result<Option<AuthState>, DbError>;
-    async fn save_state(&self, state_token: &str) -> Result<(), DbError>;
+    async fn get_state(&self, auth_state: &str) -> ResultDb<Option<AuthState>>;
+    async fn save_state(&self, state_token: &str) -> ResultDb<()>;
 }
 
 #[async_trait::async_trait(?Send)]
 impl AuthStateDb for Repository {
-    async fn get_state(&self, auth_state: &str) -> Result<Option<AuthState>, DbError> {
+    async fn get_state(&self, auth_state: &str) -> ResultDb<Option<AuthState>> {
         let mut db_conn = self.get_conn().await?;
 
         db_auth_state::dsl::auth_state
@@ -41,7 +43,7 @@ impl AuthStateDb for Repository {
             .map_err(|_| DbError::Other)
     }
 
-    async fn save_state(&self, state_token: &str) -> Result<(), DbError> {
+    async fn save_state(&self, state_token: &str) -> ResultDb<()> {
         let mut db_conn = self.get_conn().await?;
         let now = {
             let odt = time::OffsetDateTime::now_utc();

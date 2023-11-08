@@ -1,9 +1,9 @@
 
 use actix_web_actors::ws;
-use actix_web::{web::{self, Data}, HttpRequest, HttpResponse};
-use twitch_sources_rework::common_data::SubTypes;
+use actix_web::{web, HttpRequest, HttpResponse};
+use twitch_sources_rework::common_data::SubType;
 
-use crate::{util::{message_manager::GenericPassthroughWs, session_state::TypedSession, Context}, errors::MyErrors, RedisPool, domain::subscription::Subscription};
+use crate::{util::{message_manager::GenericPassthroughWs, session_state::TypedSession, Context}, errors::MyErrors, domain::subscription::Subscription, http_client::twitch_client::SubCondition};
 
 const PREDICTIONS_TOPIC: &str = "predictions";
 
@@ -12,22 +12,18 @@ pub async fn predictions_websocket(
     session: TypedSession,
     stream: web::Payload,
     ctx: Context,
-    redis_pool: Data<RedisPool>,
-    http_client: Data<reqwest::Client>
 ) -> Result<HttpResponse, MyErrors> {
     let user_id = session.get_user_id()?.ok_or(MyErrors::AccessDenied)?;
 
     Subscription::get_or_create_subscriptions(
-        &ctx.repository,
+        &ctx,
         vec![
-            SubTypes::ChannelPredictionBegin,
-            SubTypes::ChannelPredictionProgress,
-            SubTypes::ChannelPredictionLock,
-            SubTypes::ChannelPredictionEnd,
+            SubType::ChannelPredictionBegin,
+            SubType::ChannelPredictionProgress,
+            SubType::ChannelPredictionLock,
+            SubType::ChannelPredictionEnd,
         ],
-        Some(user_id),
-        &redis_pool,
-        &http_client
+        SubCondition::BroadcasterUserId(user_id.to_string()),
     )
         .await
         .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;

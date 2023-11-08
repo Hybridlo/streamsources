@@ -2,16 +2,16 @@ use futures_util::future::try_join_all;
 use hmac::{Hmac, Mac as _};
 use sha2::Sha256;
 use thiserror::Error;
-use twitch_sources_rework::common_data::SubTypes;
+use twitch_sources_rework::common_data::SubType;
 
-use crate::{db::SubscriptionDb, twitch_api::subscribe, RedisPool};
+use crate::{db::{SubscriptionDb, DbError}, twitch_api::subscribe::{TwitchSubscriptionManager, TwitchSubscriptionError}, http_client::twitch_client::SubCondition};
 
 pub struct Subscription {
     id: i64,
     user_id: Option<i64>,
     secret: String,
     sub_id: String,
-    type_: SubTypes,
+    type_: SubType,
     connected: bool,
     inactive_since: time::PrimitiveDateTime
 }
@@ -19,15 +19,13 @@ pub struct Subscription {
 type HmacSha256 = Hmac<Sha256>;
 
 impl Subscription {
-    pub async fn get_or_create_subscriptions<Repo: SubscriptionDb>(
-        db: &Repo,
-        sub_types: Vec<SubTypes>,
-        user_id: Option<i64>,
-        redis_pool: &RedisPool,
-        http_client: &reqwest::Client
+    pub async fn get_or_create_subscriptions<Ctx: SubscriptionDb + TwitchSubscriptionManager>(
+        ctx: &Ctx,
+        sub_types: Vec<SubType>,
+        sub_cond: SubCondition,
     ) -> Result<Vec<Self>, GetOrCreateSubs> {
-        let existing_subs = db.get_subscriptions(&sub_types, user_id).await
-            .map_err(|_| GetOrCreateSubs::Fail)?
+        let existing_subs = ctx.get_subscriptions(&sub_types, sub_cond.clone().into_user_id()).await
+            .map_err(GetOrCreateSubs::GetSubscriptionsFail)?
             .into_iter()
             .map(Into::into)
             .collect::<Vec<Self>>();
@@ -36,21 +34,13 @@ impl Subscription {
         
         for sub_type in sub_types.iter() {
             if !existing_subs.iter().any(|sub| &sub.type_ == sub_type) {
-                new_subs.push(subscribe(
-                    sub_type,
-                    user_id,
-                    // TODO: abstract redis actions, maybe even create/delegate traits for context
-                    redis_pool.get().await
-                        .map_err(|_| GetOrCreateSubs::Fail)?,
-                    http_client
-                ))
+                new_subs.push(ctx.subscribe(sub_cond.clone(), sub_type.clone()))
             }
         }
 
-        let new_subs = try_join_all(new_subs).await
-            .map_err(|_| GetOrCreateSubs::Fail)?;
-        let new_subs = db.create_subscriptions(new_subs, user_id).await
-            .map_err(|_| GetOrCreateSubs::Fail)?
+        let new_subs = try_join_all(new_subs).await?;
+        let new_subs = ctx.create_subscriptions(new_subs, sub_cond.into_user_id()).await
+            .map_err(GetOrCreateSubs::CreateSubscriptionFail)?
             .into_iter()
             .map(Into::into)
             .collect::<Vec<Self>>();
@@ -89,8 +79,12 @@ impl Subscription {
 
 #[derive(Debug, Error)]
 pub enum GetOrCreateSubs {
-    #[error("Failed to get or create subscriptions")]
-    Fail
+    #[error("Getting subscriptions failed: {0}")]
+    GetSubscriptionsFail(DbError),
+    #[error("Requesting subscription failed: {0}")]
+    TwitchSubcriptionFail(#[from] TwitchSubscriptionError),
+    #[error("Saving subscriptions failed: {0}")]
+    CreateSubscriptionFail(DbError),
 }
 
 #[derive(Debug, Error)]

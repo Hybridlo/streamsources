@@ -51,3 +51,21 @@ pub async fn get_redis_connection() -> Result<redis::aio::Connection> {
 
     Ok(client.get_async_connection().await?)
 }
+
+/// Gets a twitch key from the environment variable.
+/// 
+/// # Panics
+/// 
+/// If the environment variable is not set
+pub fn get_twitch_key() -> String {
+    std::env::var("TWITCH_KEY").expect("TWITCH_KEY is not set")
+}
+
+/// Gets a twitch secret from the environment variable.
+/// 
+/// # Panics
+/// 
+/// If the environment variable is not set
+pub fn get_twitch_secret() -> String {
+    std::env::var("TWITCH_SECRET").expect("TWITCH_SECRET is not set")
+}

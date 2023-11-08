@@ -2,10 +2,12 @@ mod db;
 mod domain;
 mod util;
 mod errors;
+mod http_client;
 mod routes;
 mod websockets;
 mod twitch_api;
 mod middlewares;
+mod my_redis;
 
 use actix_web::cookie::Key;
 
@@ -14,12 +16,13 @@ use actix_web::web as web_ax;
 use actix_web::{web::Data, App, HttpServer};
 use actix_web::middleware::Logger;
 use actix_web::dev::{fn_service, ServiceResponse, ServiceRequest};
+use http_client::twitch_client::SubCondition;
 use paperclip::actix::OpenApiExt;
 use paperclip::actix::web;
 
 use actix_session::SessionMiddleware;
 
-use twitch_sources_rework::common_data::SubTypes;
+use twitch_sources_rework::common_data::SubType;
 pub use util::DbPool;
 pub use util::RedisPool;
 
@@ -55,13 +58,11 @@ async fn main() {
 
     // check and create needed subscriptions
     domain::subscription::Subscription::get_or_create_subscriptions(
-        &context.repository,
+        &context,
         vec![
-            SubTypes::UserAuthorizationRevoke
+            SubType::UserAuthorizationRevoke
         ],
-        None,
-        &redis_pool,
-        &http_client
+        SubCondition::client_id(),
     )
         .await
         .expect("UserAuthorizationRevoke subscription failed");

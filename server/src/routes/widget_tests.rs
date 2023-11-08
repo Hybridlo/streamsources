@@ -2,7 +2,7 @@ use actix::Actor;
 use actix_web::web::{Query, Json, Data};
 use paperclip::actix::{Apiv2Schema, api_v2_operation};
 use serde::Deserialize;
-use crate::{RedisPool, RunningTests};
+use crate::RunningTests;
 use crate::util::{session_state::TypedSession, PredictionsTestActor};
 use crate::errors::MyErrors;
 

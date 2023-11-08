@@ -11,6 +11,8 @@ pub use common::get_redis_session;
 pub use common::init_debug_log;
 pub use common::get_redis_client_pool;
 pub use common::get_redis_connection;
+pub use common::get_twitch_key;
+pub use common::get_twitch_secret;
 pub use common::RedisPool;
 pub use common::DbPool;
 pub use context::Context;

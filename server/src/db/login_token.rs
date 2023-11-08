@@ -1,9 +1,9 @@
+use auto_delegate::delegate;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
-use anyhow::Result;
 use rand::Rng;
 
-use super::{quick_login_token, Repository, DbError};
+use super::{quick_login_token, Repository, DbError, ResultDb};
 
 const TOKEN_LENGTH: u32 = 20;
 
@@ -22,15 +22,16 @@ struct LoginTokenNew {
 }
 
 #[async_trait::async_trait(?Send)]
+#[delegate]
 pub trait LoginTokenDb {
-    async fn get_login_token(&self, user_id: i64) -> Result<String, DbError>;
-    async fn create_login_token(&self, user_id: i64) -> Result<String, DbError>;
-    async fn find_token(&self, token: &str) -> Result<i64, DbError>;
+    async fn get_login_token(&self, user_id: i64) -> ResultDb<String>;
+    async fn create_login_token(&self, user_id: i64) -> ResultDb<String>;
+    async fn find_token(&self, token: &str) -> ResultDb<i64>;
 }
 
 #[async_trait::async_trait(?Send)]
 impl LoginTokenDb for Repository {
-    async fn get_login_token(&self, user_id: i64) -> Result<String, DbError> {
+    async fn get_login_token(&self, user_id: i64) -> ResultDb<String> {
         let mut db_conn = self.get_conn().await?;
 
         quick_login_token::dsl::quick_login_token
@@ -41,7 +42,7 @@ impl LoginTokenDb for Repository {
             .map_err(|_| DbError::Other)
     }
 
-    async fn create_login_token(&self, user_id: i64) -> Result<String, DbError> {
+    async fn create_login_token(&self, user_id: i64) -> ResultDb<String> {
         let mut db_conn = self.get_conn().await?;
 
         let mut rng = rand::thread_rng();
@@ -55,7 +56,7 @@ impl LoginTokenDb for Repository {
         Ok(login_token)
     }
 
-    async fn find_token(&self, token: &str) -> Result<i64, DbError> {
+    async fn find_token(&self, token: &str) -> ResultDb<i64> {
         let mut db_conn = self.get_conn().await?;
 
         let login_token_item: LoginToken = quick_login_token::dsl::quick_login_token

@@ -1,23 +1,27 @@
 use std::future::{Ready, ready};
 
 use actix_web::FromRequest;
+use auto_delegate::Delegate;
 use paperclip::{actix::OperationModifier, v2::schema::TypedData};
 
-use crate::{errors::MyErrors, RedisPool, db::Repository};
+use crate::{errors::MyErrors, db::Repository, http_client::HttpClient, my_redis::RedisClient};
 
-#[derive(Clone)]
+#[derive(Clone, Delegate)]
 pub struct Context {
+    #[to(AuthStateDb, LoginTokenDb, SubscriptionDb, TwitchUserDb)]
     pub repository: Repository,
-    pub redis: RedisPool,
-    pub http_client: reqwest::Client,
+    #[to(TokenCache, MessagePublisher)]
+    pub redis: RedisClient,
+    #[to(TwitchHttpClient)]
+    pub http_client: HttpClient,
 }
 
 impl Context {
     pub fn new() -> Self {
         Self {
             repository: super::create_connection_pool().expect("Unable to create DB pool").into(),
-            redis: super::get_redis_client_pool().expect("Unable to connect to Redis"),
-            http_client: reqwest::Client::new(),
+            redis: super::get_redis_client_pool().expect("Unable to connect to Redis").into(),
+            http_client: HttpClient(reqwest::Client::new()),
         }
     }
 }

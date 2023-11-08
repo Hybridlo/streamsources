@@ -2,12 +2,12 @@ use std::{future::{ready, Ready}, rc::Rc};
 
 use actix_web::{dev::{
     forward_ready, Service, ServiceRequest, ServiceResponse, Transform
-}, Error, web::Data, HttpResponse, http::header, body::EitherBody};
+}, Error, HttpResponse, http::header, body::EitherBody};
 use actix_web::FromRequest;
 use futures_util::future::LocalBoxFuture;
 use twitch_sources_rework::TWITCH_AUTH_URL;
 
-use crate::{DbPool, routes::LoginUrlResponse, errors::{MyErrors, IntoResultMyErr}, util::{session_state::TypedSession, Context}};
+use crate::{routes::LoginUrlResponse, errors::MyErrors, util::{session_state::TypedSession, Context}};
 use crate::domain::auth_state::AuthState;
 
 pub struct AutoTwitchLoginFactory;
@@ -66,11 +66,6 @@ where
                 return Ok(res.map_into_left_body())
             }
             // otherwise - redirect user to twitch api login
-            let db_pool = req
-                .app_data::<Data<DbPool>>()
-                .ok_or(MyErrors::InternalServerError("DB access error".to_string()))?;
-            let mut db_conn = db_pool.get().await.into_my()?;
-
             let ctx = req.app_data::<Context>().ok_or(MyErrors::InternalServerError("DB access error".to_string()))?;
 
             let full_uri = req.uri().to_string();

@@ -1,17 +1,12 @@
+use auto_delegate::delegate;
 use diesel::prelude::*;
-use diesel_async::{AsyncPgConnection, RunQueryDsl};
-use anyhow::Result;
-use futures::future::try_join_all;
-use hmac::{Hmac, Mac};
-use sha2::Sha256;
-use twitch_sources_rework::common_data::SubTypes;
+use diesel_async::RunQueryDsl;
+use twitch_sources_rework::common_data::SubType;
 
-use crate::{twitch_api::{subscribe, SubData}, RedisPool};
+use crate::http_client::twitch_client::SubData;
 
-use super::{db_subscription, DbError, Repository};
+use super::{db_subscription, DbError, Repository, ResultDb};
 
-
-type HmacSha256 = Hmac<Sha256>;
 
 #[derive(Queryable)]
 pub struct Subscription {
@@ -20,7 +15,7 @@ pub struct Subscription {
     pub secret: String,
     pub sub_id: String,
     #[diesel(deserialize_as = String)]
-    pub type_: SubTypes,
+    pub type_: SubType,
     pub connected: bool,
     pub inactive_since: time::PrimitiveDateTime
 }
@@ -35,16 +30,17 @@ struct SubscriptionNew {
 }
 
 #[async_trait::async_trait(?Send)]
+#[delegate]
 pub trait SubscriptionDb {
-    async fn get_subscriptions(&self, sub_types: &[SubTypes], user_id: Option<i64>) -> Result<Vec<Subscription>, DbError>;
-    async fn create_subscriptions(&self, new_subs: Vec<SubData>, user_id: Option<i64>) -> Result<Vec<Subscription>, DbError>;
-    async fn get_subscription(&self, sub_id: &str) -> Result<Option<Subscription>, DbError>;
-    async fn remove_subscription(&self, sub_id: &str) -> Result<(), DbError>;
+    async fn get_subscriptions(&self, sub_types: &[SubType], user_id: Option<i64>) -> ResultDb<Vec<Subscription>>;
+    async fn create_subscriptions(&self, new_subs: Vec<SubData>, user_id: Option<i64>) -> ResultDb<Vec<Subscription>>;
+    async fn get_subscription(&self, sub_id: &str) -> ResultDb<Option<Subscription>>;
+    async fn remove_subscription(&self, sub_id: &str) -> ResultDb<()>;
 }
 
 #[async_trait::async_trait(?Send)]
 impl SubscriptionDb for Repository {
-    async fn get_subscriptions(&self, sub_types: &[SubTypes], user_id: Option<i64>) -> Result<Vec<Subscription>, DbError> {
+    async fn get_subscriptions(&self, sub_types: &[SubType], user_id: Option<i64>) -> ResultDb<Vec<Subscription>> {
         let mut db_conn = self.get_conn().await?;
 
         Ok(match user_id {
@@ -63,7 +59,7 @@ impl SubscriptionDb for Repository {
         })
     }
 
-    async fn create_subscriptions(&self, new_subs: Vec<SubData>, user_id: Option<i64>) -> Result<Vec<Subscription>, DbError> {
+    async fn create_subscriptions(&self, new_subs: Vec<SubData>, user_id: Option<i64>) -> ResultDb<Vec<Subscription>> {
         let mut db_conn = self.get_conn().await?;
 
         let new_subs = new_subs.into_iter().map(|item| SubscriptionNew {
@@ -79,7 +75,7 @@ impl SubscriptionDb for Repository {
             .map_err(|_| DbError::Other)
     }
     
-    async fn get_subscription(&self, sub_id: &str) -> Result<Option<Subscription>, DbError> {
+    async fn get_subscription(&self, sub_id: &str) -> ResultDb<Option<Subscription>> {
         let mut db_conn = self.get_conn().await?;
 
         db_subscription::dsl::subscription
@@ -88,7 +84,7 @@ impl SubscriptionDb for Repository {
             .map_err(|_| DbError::Other)
     }
 
-    async fn remove_subscription(&self, sub_id: &str) -> Result<(), DbError> {
+    async fn remove_subscription(&self, sub_id: &str) -> ResultDb<()> {
         let mut db_conn = self.get_conn().await?;
 
         diesel::delete(db_subscription::dsl::subscription
