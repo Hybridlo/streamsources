@@ -1,91 +1,162 @@
 use serde::{Serialize, Deserialize};
 use anyhow::Result;
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UserAuthorizationRevoke {
-    pub client_id: String,
-    pub user_id: String,
-    pub user_login: Option<String>,
-    pub user_name: Option<String>,
+pub use auth_revoke::*;
+pub use channel_predictions::*;
+pub use hype_train::*;
+
+mod auth_revoke {
+    use serde::{Serialize, Deserialize};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct UserAuthorizationRevoke {
+        pub client_id: String,
+        pub user_id: String,
+        pub user_login: Option<String>,
+        pub user_name: Option<String>,
+    }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TopPredictior {
-    pub user_id: String,
-    pub user_login: String,
-    pub user_name: String,
-    pub channel_points_won: Option<i64>,
-    pub channel_points_used: i64
+mod channel_predictions {
+    use serde::{Serialize, Deserialize};
+
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct TopPredictior {
+        pub user_id: String,
+        pub user_login: String,
+        pub user_name: String,
+        pub channel_points_won: Option<i64>,
+        pub channel_points_used: i64
+    }
+    
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct PredictionsOutcome {
+        pub id: String,
+        pub title: String,
+        pub color: String,
+        #[serde(default)]
+        pub users: i64,
+        #[serde(default)]
+        pub channel_points: i64,
+        #[serde(default)]
+        pub top_predictors: Vec<TopPredictior>
+    }
+    
+    #[derive(Debug, Serialize, Deserialize)]
+    #[serde(rename_all="snake_case")]
+    pub enum PredictionEndStatus {
+        Resolved,
+        Canceled
+    }
+    
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct ChannelPredictionBegin {
+        pub id: String,
+        pub broadcaster_user_id: String,
+        pub broadcaster_user_login: String,
+        pub broadcaster_user_name: String,
+        pub title: String,
+        pub outcomes: Vec<PredictionsOutcome>,
+        pub started_at: String,
+        pub locks_at: String
+    }
+    
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct ChannelPredictionProgress {
+        pub id: String,
+        pub broadcaster_user_id: String,
+        pub broadcaster_user_login: String,
+        pub broadcaster_user_name: String,
+        pub title: String,
+        pub outcomes: Vec<PredictionsOutcome>,
+        pub started_at: String,
+        pub locks_at: String
+    }
+    
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct ChannelPredictionLock {
+        pub id: String,
+        pub broadcaster_user_id: String,
+        pub broadcaster_user_login: String,
+        pub broadcaster_user_name: String,
+        pub title: String,
+        pub outcomes: Vec<PredictionsOutcome>,
+        pub started_at: String,
+        pub locked_at: String
+    }
+    
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct ChannelPredictionEnd {
+        pub id: String,
+        pub broadcaster_user_id: String,
+        pub broadcaster_user_login: String,
+        pub broadcaster_user_name: String,
+        pub title: String,
+        pub winning_outcome_id: Option<String>,
+        pub outcomes: Vec<PredictionsOutcome>,
+        pub status: String,
+        pub started_at: String,
+        pub ended_at: String
+    }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct PredictionsOutcome {
-    pub id: String,
-    pub title: String,
-    pub color: String,
-    #[serde(default)]
-    pub users: i64,
-    #[serde(default)]
-    pub channel_points: i64,
-    #[serde(default)]
-    pub top_predictors: Vec<TopPredictior>
-}
+mod hype_train {
+    use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all="snake_case")]
-pub enum PredictionEndStatus {
-    Resolved,
-    Canceled
-}
+    #[derive(Debug, Serialize, Deserialize)]
+    #[serde(rename_all="lowercase")]
+    pub enum ContributionType {
+        Bits,
+        Subscription,
+        Other
+    }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ChannelPredictionBegin {
-    pub id: String,
-    pub broadcaster_user_id: String,
-    pub broadcaster_user_login: String,
-    pub broadcaster_user_name: String,
-    pub title: String,
-    pub outcomes: Vec<PredictionsOutcome>,
-    pub started_at: String,
-    pub locks_at: String
-}
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct Contribution {
+        pub user_id: String,
+        pub user_login: String,
+        pub user_name: String,
+        #[serde(rename="type")]
+        pub type_: ContributionType,
+        pub total: i64
+    }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ChannelPredictionProgress {
-    pub id: String,
-    pub broadcaster_user_id: String,
-    pub broadcaster_user_login: String,
-    pub broadcaster_user_name: String,
-    pub title: String,
-    pub outcomes: Vec<PredictionsOutcome>,
-    pub started_at: String,
-    pub locks_at: String
-}
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct HypeTrainData {
+        pub id: String,
+        pub broadcaster_user_id: String,
+        pub broadcaster_user_login: String,
+        pub broadcaster_user_name: String,
+        pub total: i64,
+        pub progress: i64,
+        pub goal: i64,
+        pub top_contributions: Vec<Contribution>,
+        pub last_contribution: Contribution,
+        pub level: i64,
+        pub started_at: String,
+    }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ChannelPredictionLock {
-    pub id: String,
-    pub broadcaster_user_id: String,
-    pub broadcaster_user_login: String,
-    pub broadcaster_user_name: String,
-    pub title: String,
-    pub outcomes: Vec<PredictionsOutcome>,
-    pub started_at: String,
-    pub locked_at: String
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ChannelPredictionEnd {
-    pub id: String,
-    pub broadcaster_user_id: String,
-    pub broadcaster_user_login: String,
-    pub broadcaster_user_name: String,
-    pub title: String,
-    pub winning_outcome_id: Option<String>,
-    pub outcomes: Vec<PredictionsOutcome>,
-    pub status: String,
-    pub started_at: String,
-    pub ended_at: String
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct HypeTrainBegin {
+        #[serde(flatten)]
+        pub data: HypeTrainData,
+        pub expires_at: String,
+    }
+    
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct HypeTrainProgress {
+        #[serde(flatten)]
+        pub data: HypeTrainData,
+        pub expires_at: String,
+    }
+    
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct HypeTrainEnd {
+        #[serde(flatten)]
+        pub data: HypeTrainData,
+        pub ended_at: String,
+        pub cooldown_ends_at: String,
+    }
 }
 
 // the wrapper for the actual data
@@ -96,6 +167,9 @@ pub enum EventSubData {
     ChannelPredictionProgress(ChannelPredictionProgress),
     ChannelPredictionLock(ChannelPredictionLock),
     ChannelPredictionEnd(ChannelPredictionEnd),
+    HypeTrainBegin(HypeTrainBegin),
+    HypeTrainProgress(HypeTrainProgress),
+    HypeTrainEnd(HypeTrainEnd),
 }
 
 // discriminator for supported types
@@ -110,7 +184,13 @@ pub enum SubType {
     #[serde(rename="channel.prediction.lock")]
     ChannelPredictionLock,
     #[serde(rename="channel.prediction.end")]
-    ChannelPredictionEnd
+    ChannelPredictionEnd,
+    #[serde(rename="channel.hype_train.begin")]
+    HypeTrainBegin,
+    #[serde(rename="channel.hype_train.progress")]
+    HypeTrainProgress,
+    #[serde(rename="channel.hype_train.end")]
+    HypeTrainEnd
 }
 
 impl ToString for SubType {
@@ -156,21 +236,36 @@ impl EventSubMessage {
                 data: EventSubData::ChannelPredictionEnd(serde_json::de::from_str(&data.to_string())?),
                 msg_time: msg_time.to_string()
             },
+            SubType::HypeTrainBegin => EventSubMessage {
+                data: EventSubData::HypeTrainBegin(serde_json::de::from_str(&data.to_string())?),
+                msg_time: msg_time.to_string()
+            },
+            SubType::HypeTrainProgress => EventSubMessage {
+                data: EventSubData::HypeTrainProgress(serde_json::de::from_str(&data.to_string())?),
+                msg_time: msg_time.to_string()
+            },
+            SubType::HypeTrainEnd => EventSubMessage {
+                data: EventSubData::HypeTrainEnd(serde_json::de::from_str(&data.to_string())?),
+                msg_time: msg_time.to_string()
+            },
         };
 
         Ok(res)
     }
 
-    pub fn get_target(&self) -> String {
+    pub fn get_target(&self) -> &str {
         let target = match &self.data {
             EventSubData::UserAuthorizationRevoke(data) => &data.client_id,
             EventSubData::ChannelPredictionBegin(data) => &data.broadcaster_user_id,
             EventSubData::ChannelPredictionProgress(data) => &data.broadcaster_user_id,
             EventSubData::ChannelPredictionLock(data) => &data.broadcaster_user_id,
             EventSubData::ChannelPredictionEnd(data) => &data.broadcaster_user_id,
+            EventSubData::HypeTrainBegin(data) => &data.data.broadcaster_user_id,
+            EventSubData::HypeTrainProgress(data) => &data.data.broadcaster_user_id,
+            EventSubData::HypeTrainEnd(data) => &data.data.broadcaster_user_id,
         };
 
-        target.clone()
+        target
     }
 }
 

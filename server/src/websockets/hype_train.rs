@@ -5,9 +5,9 @@ use twitch_sources_rework::common_data::SubType;
 
 use crate::{util::{message_manager::GenericPassthroughWs, session_state::TypedSession, Context}, errors::MyErrors, domain::subscription::Subscription, http_client::twitch_client::SubCondition};
 
-pub const PREDICTIONS_TOPIC: &str = "predictions";
+pub const HYPE_TRAIN_TOPIC: &str = "hype_train";
 
-pub async fn predictions_websocket(
+pub async fn hype_train_websocket(
     req: HttpRequest,
     session: TypedSession,
     stream: web::Payload,
@@ -18,17 +18,16 @@ pub async fn predictions_websocket(
     Subscription::get_or_create_subscriptions(
         &ctx,
         vec![
-            SubType::ChannelPredictionBegin,
-            SubType::ChannelPredictionProgress,
-            SubType::ChannelPredictionLock,
-            SubType::ChannelPredictionEnd,
+            SubType::HypeTrainBegin,
+            SubType::HypeTrainProgress,
+            SubType::HypeTrainEnd,
         ],
         SubCondition::BroadcasterUserId(user_id.to_string()),
     )
         .await
         .map_err(|err| MyErrors::InternalServerError(err.to_string()))?;
     
-    let resp = ws::start(GenericPassthroughWs::new(user_id, PREDICTIONS_TOPIC), &req, stream)?;
+    let resp = ws::start(GenericPassthroughWs::new(user_id, HYPE_TRAIN_TOPIC), &req, stream)?;
     
     Ok(resp)
 }

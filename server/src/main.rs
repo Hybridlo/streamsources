@@ -95,6 +95,7 @@ async fn main() {
                         // i don't need two scopes now, but just in case
                         web_ax::scope("/sources")
                             .route("/predictions", web_ax::get().to(websockets::predictions_websocket))
+                            .route("/hype_train", web_ax::get().to(websockets::hype_train_websocket))
                     )
             )
             .route(WEBHOOK_URL, web_ax::post().to(routes::webhook))

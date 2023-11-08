@@ -2,7 +2,7 @@ use anyhow::Result;
 use thiserror::Error;
 use twitch_sources_rework::common_data::{EventSubMessage, EventSubData};
 
-use crate::{db::TwitchUserDb, domain::users::{TwitchUser, DeleteUserError}, my_redis::{RedisError, publisher::MessagePublisher}};
+use crate::{db::TwitchUserDb, domain::users::{TwitchUser, DeleteUserError}, my_redis::{RedisError, publisher::MessagePublisher}, websockets::{PREDICTIONS_TOPIC, HYPE_TRAIN_TOPIC}};
 
 
 #[async_trait::async_trait(?Send)]
@@ -21,7 +21,14 @@ impl<T: TwitchUserDb + MessagePublisher> EventMessageHandler for T {
           | EventSubData::ChannelPredictionEnd(_) => {
                 let data = serde_json::ser::to_vec(&msg)?;
     
-                self.publish_message(&msg.get_target(), "predictions", &data).await?;
+                self.publish_message(msg.get_target(), PREDICTIONS_TOPIC, &data).await?;
+            },
+            EventSubData::HypeTrainBegin(_)
+          | EventSubData::HypeTrainProgress(_)
+          | EventSubData::HypeTrainEnd(_) => {
+                let data = serde_json::ser::to_vec(&msg)?;
+    
+                self.publish_message(msg.get_target(), HYPE_TRAIN_TOPIC, &data).await?;
             },
         };
     
