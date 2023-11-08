@@ -1471,6 +1471,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "hypetrain-normal"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "serde_urlencoded",
+ "twitch-sources-rework",
+ "wasm-logger",
+ "web-sys",
+ "yew",
+ "yew-hooks",
+]
+
+[[package]]
 name = "iana-time-zone"
 version = "0.1.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
