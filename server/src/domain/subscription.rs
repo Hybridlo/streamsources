@@ -21,10 +21,10 @@ type HmacSha256 = Hmac<Sha256>;
 impl Subscription {
     pub async fn get_or_create_subscriptions<Ctx: SubscriptionDb + TwitchSubscriptionManager>(
         ctx: &Ctx,
-        sub_types: Vec<SubType>,
+        sub_types: &[SubType],
         sub_cond: SubCondition,
     ) -> Result<Vec<Self>, GetOrCreateSubs> {
-        let existing_subs = ctx.get_subscriptions(&sub_types, sub_cond.clone().into_user_id()).await
+        let existing_subs = ctx.get_subscriptions(sub_types, sub_cond.clone().into_user_id()).await
             .map_err(GetOrCreateSubs::GetSubscriptionsFail)?
             .into_iter()
             .map(Into::into)

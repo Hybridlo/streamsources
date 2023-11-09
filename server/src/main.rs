@@ -59,9 +59,7 @@ async fn main() {
     // check and create needed subscriptions
     domain::subscription::Subscription::get_or_create_subscriptions(
         &context,
-        vec![
-            SubType::UserAuthorizationRevoke
-        ],
+        &[SubType::UserAuthorizationRevoke],
         SubCondition::client_id(),
     )
         .await
@@ -92,10 +90,22 @@ async fn main() {
             .service(
                 web_ax::scope("/ws")
                     .service(
-                        // i don't need two scopes now, but just in case
-                        web_ax::scope("/sources")
-                            .route("/predictions", web_ax::get().to(websockets::predictions_websocket))
-                            .route("/hype_train", web_ax::get().to(websockets::hype_train_websocket))
+                        // builds a scope with all websockets
+                        {
+                            let mut scope = web_ax::scope("/sources");
+
+                            for websocket_data in websockets::WEBSOCKET_DATA_TYPES {
+                                scope = scope.route(
+                                    &("/".to_string() + websocket_data.topic),
+                                    web_ax::get().to(
+                                        |req, session, stream, ctx|
+                                            websockets::websocket_starter(websocket_data, req, session, stream, ctx)
+                                    )
+                                )
+                            }
+
+                            scope
+                        }
                     )
             )
             .route(WEBHOOK_URL, web_ax::post().to(routes::webhook))

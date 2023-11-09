@@ -2,7 +2,7 @@ use anyhow::Result;
 use thiserror::Error;
 use twitch_sources_rework::common_data::{EventSubMessage, EventSubData};
 
-use crate::{db::TwitchUserDb, domain::users::{TwitchUser, DeleteUserError}, my_redis::{RedisError, publisher::MessagePublisher}, websockets::{PREDICTIONS_TOPIC, HYPE_TRAIN_TOPIC}};
+use crate::{db::TwitchUserDb, domain::users::{TwitchUser, DeleteUserError}, my_redis::{RedisError, publisher::MessagePublisher}, websockets};
 
 
 #[async_trait::async_trait(?Send)]
@@ -13,24 +13,18 @@ pub trait EventMessageHandler {
 #[async_trait::async_trait(?Send)]
 impl<T: TwitchUserDb + MessagePublisher> EventMessageHandler for T {
     async fn handle_message(&self, msg: EventSubMessage) -> Result<(), HandleMessageError> {
-        match &msg.data {
-            EventSubData::UserAuthorizationRevoke(data) => TwitchUser::delete_user(self, data.user_id.parse()?).await?,
-            EventSubData::ChannelPredictionBegin(_)
-          | EventSubData::ChannelPredictionProgress(_)
-          | EventSubData::ChannelPredictionLock(_)
-          | EventSubData::ChannelPredictionEnd(_) => {
+        if let EventSubData::UserAuthorizationRevoke(data) = &msg.data {
+            TwitchUser::delete_user(self, data.user_id.parse()?).await?;
+        }
+
+        // Dispatch to all websockets, that declared this message as it's sub_type
+        for websocket_data in websockets::WEBSOCKET_DATA_TYPES {
+            if websocket_data.sub_types.contains(&msg.data.sub_type()) {
                 let data = serde_json::ser::to_vec(&msg)?;
     
-                self.publish_message(msg.get_target(), PREDICTIONS_TOPIC, &data).await?;
-            },
-            EventSubData::HypeTrainBegin(_)
-          | EventSubData::HypeTrainProgress(_)
-          | EventSubData::HypeTrainEnd(_) => {
-                let data = serde_json::ser::to_vec(&msg)?;
-    
-                self.publish_message(msg.get_target(), HYPE_TRAIN_TOPIC, &data).await?;
-            },
-        };
+                self.publish_message(msg.data.get_target(), websocket_data.topic, &data).await?;
+            }
+        }
     
         Ok(())
     }

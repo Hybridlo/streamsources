@@ -172,6 +172,38 @@ pub enum EventSubData {
     HypeTrainEnd(HypeTrainEnd),
 }
 
+impl EventSubData {
+    pub fn get_target(&self) -> &str {
+        let target = match self {
+            EventSubData::UserAuthorizationRevoke(data) => &data.client_id,
+            EventSubData::ChannelPredictionBegin(data) => &data.broadcaster_user_id,
+            EventSubData::ChannelPredictionProgress(data) => &data.broadcaster_user_id,
+            EventSubData::ChannelPredictionLock(data) => &data.broadcaster_user_id,
+            EventSubData::ChannelPredictionEnd(data) => &data.broadcaster_user_id,
+            EventSubData::HypeTrainBegin(data) => &data.data.broadcaster_user_id,
+            EventSubData::HypeTrainProgress(data) => &data.data.broadcaster_user_id,
+            EventSubData::HypeTrainEnd(data) => &data.data.broadcaster_user_id,
+        };
+
+        target
+    }
+
+    pub fn sub_type(&self) -> SubType {
+        let sub_type = match self {
+            EventSubData::UserAuthorizationRevoke(_) => SubType::UserAuthorizationRevoke,
+            EventSubData::ChannelPredictionBegin(_) => SubType::ChannelPredictionBegin,
+            EventSubData::ChannelPredictionProgress(_) => SubType::ChannelPredictionProgress,
+            EventSubData::ChannelPredictionLock(_) => SubType::ChannelPredictionLock,
+            EventSubData::ChannelPredictionEnd(_) => SubType::ChannelPredictionEnd,
+            EventSubData::HypeTrainBegin(_) => SubType::HypeTrainBegin,
+            EventSubData::HypeTrainProgress(_) => SubType::HypeTrainProgress,
+            EventSubData::HypeTrainEnd(_) => SubType::HypeTrainEnd,
+        };
+
+        sub_type
+    }
+}
+
 // discriminator for supported types
 #[derive(Serialize, Deserialize, Clone, PartialEq)]
 pub enum SubType {
@@ -251,21 +283,6 @@ impl EventSubMessage {
         };
 
         Ok(res)
-    }
-
-    pub fn get_target(&self) -> &str {
-        let target = match &self.data {
-            EventSubData::UserAuthorizationRevoke(data) => &data.client_id,
-            EventSubData::ChannelPredictionBegin(data) => &data.broadcaster_user_id,
-            EventSubData::ChannelPredictionProgress(data) => &data.broadcaster_user_id,
-            EventSubData::ChannelPredictionLock(data) => &data.broadcaster_user_id,
-            EventSubData::ChannelPredictionEnd(data) => &data.broadcaster_user_id,
-            EventSubData::HypeTrainBegin(data) => &data.data.broadcaster_user_id,
-            EventSubData::HypeTrainProgress(data) => &data.data.broadcaster_user_id,
-            EventSubData::HypeTrainEnd(data) => &data.data.broadcaster_user_id,
-        };
-
-        target
     }
 }
 
