@@ -24,7 +24,8 @@ struct ErrorResponse {
 // about that right now, not that big of a deal anyway tho
 pub enum MyErrors {
     InternalServerError(String),
-    AccessDenied
+    AccessDenied,
+    NotFound,
 }
 
 impl std::fmt::Debug for MyErrors {
@@ -32,6 +33,7 @@ impl std::fmt::Debug for MyErrors {
         match self {
             Self::InternalServerError(msg) => write!(f, "MyErrors::InternalServerError: {}", msg),
             Self::AccessDenied => write!(f, "MyErrors::AccessDenied"),
+            Self::NotFound => write!(f, "MyErrors::NotFound"),
         }
     }
 }
@@ -41,6 +43,7 @@ impl std::fmt::Display for MyErrors {
         match self {
             Self::InternalServerError(_) => write!(f, "Internal server error"),
             Self::AccessDenied => write!(f, "Access denied"),
+            Self::NotFound => write!(f, "Not found"),
         }
     }
 }
@@ -52,6 +55,7 @@ impl ResponseError for MyErrors {
         match self {
             MyErrors::InternalServerError(_) => reqwest::StatusCode::INTERNAL_SERVER_ERROR,
             MyErrors::AccessDenied => reqwest::StatusCode::FORBIDDEN,
+            MyErrors::NotFound => reqwest::StatusCode::NOT_FOUND,
         }
     }
 }

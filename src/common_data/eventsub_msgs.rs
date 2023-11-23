@@ -1,3 +1,5 @@
+use std::fmt;
+
 use serde::{Serialize, Deserialize};
 use anyhow::Result;
 
@@ -103,7 +105,7 @@ mod channel_predictions {
 mod hype_train {
     use serde::{Serialize, Deserialize};
 
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
     #[serde(rename_all="lowercase")]
     pub enum ContributionType {
         Bits,
@@ -111,14 +113,24 @@ mod hype_train {
         Other
     }
 
-    #[derive(Debug, Serialize, Deserialize)]
+    impl ContributionType {
+        pub fn name(&self) -> &'static str {
+            match self {
+                ContributionType::Bits => "bits",
+                ContributionType::Subscription => "subs",
+                ContributionType::Other => "donation (other)",
+            }
+        }
+    }
+
+    #[derive(Clone, Debug, Serialize, Deserialize)]
     pub struct Contribution {
         pub user_id: String,
         pub user_login: String,
         pub user_name: String,
         #[serde(rename="type")]
         pub type_: ContributionType,
-        pub total: i64
+        pub total: u64
     }
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -127,12 +139,12 @@ mod hype_train {
         pub broadcaster_user_id: String,
         pub broadcaster_user_login: String,
         pub broadcaster_user_name: String,
-        pub total: i64,
-        pub progress: i64,
-        pub goal: i64,
+        pub total: u64,
+        pub progress: u64,
+        pub goal: u64,
         pub top_contributions: Vec<Contribution>,
         pub last_contribution: Contribution,
-        pub level: i64,
+        pub level: u64,
         pub started_at: String,
     }
 
@@ -205,7 +217,7 @@ impl EventSubData {
 }
 
 // discriminator for supported types
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub enum SubType {
     #[serde(rename="user.authorization.revoke")]
     UserAuthorizationRevoke,
@@ -225,17 +237,23 @@ pub enum SubType {
     HypeTrainEnd
 }
 
-impl ToString for SubType {
-    fn to_string(&self) -> String {
-        serde_json::ser::to_string(self).expect("Serialization shouldn't fail")
+impl fmt::Display for SubType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", serde_json::ser::to_string(self).expect("Serialization shouldn't fail"))
+    }
+}
+
+impl From<SubType> for String {
+    fn from(sub_type: SubType) -> Self {
+        sub_type.to_string()
     }
 }
 
 impl TryFrom<String> for SubType {
     type Error = anyhow::Error;
 
-    fn try_from(value: String) -> std::result::Result<Self, Self::Error> {
-        Ok(serde_json::de::from_str(&value)?)
+    fn try_from(sub_type_str: String) -> std::result::Result<Self, Self::Error> {
+        Ok(serde_json::de::from_str(&sub_type_str)?)
     }
 }
 

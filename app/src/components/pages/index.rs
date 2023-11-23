@@ -10,7 +10,8 @@ pub fn index() -> Html {
             <h4 class="text-center p-2">{ "Available sources:" }</h4>
             <div class="list-group p-2">
                 <SourceLink href={BaseRoute::Predictions} name="Predictions" />
-                <SourceLink href={BaseRoute::NotFound} name="...with more coming soon!" disabled=true />
+                <SourceLink href={BaseRoute::HypeTrain} name="Hype train" />
+                <SourceLink href={BaseRoute::NotFound} name="...with more coming!" disabled=true />
             </div>
         </>
     }

@@ -5,8 +5,8 @@ create table subscription (
     secret varchar(100) not null,
     sub_id varchar(100) not null,
     type varchar(100) not null,
-    connected boolean not null default false,
-    inactive_since timestamp without time zone NOT NULL DEFAULT (NOW() at time zone 'utc'),
+    last_connect timestamp without time zone NOT NULL DEFAULT (NOW() at time zone 'utc'),
+    last_disconnect timestamp without time zone NOT NULL DEFAULT (NOW() at time zone 'utc'),
 
     constraint unique_sub_id unique (sub_id),
     constraint fk_user

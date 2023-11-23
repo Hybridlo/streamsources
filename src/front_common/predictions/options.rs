@@ -1,7 +1,7 @@
 use serde::{Serialize, Deserialize};
 use yew::{Properties, UseStateHandle};
 
-use crate::front_common::{SourceColor, options_util::IntoWithLogin};
+use crate::{front_common::{SourceColor, options_util::IntoWithLogin}, util::is_default};
 
 use super::{PredictionState, PredictionStatus};
 
@@ -15,8 +15,10 @@ pub struct PredictionsSourceOptionsLogin {
 #[derive(Default, Clone, Copy, Serialize, Deserialize, Debug, PartialEq)]
 pub struct PredictionsSourceOptions {
     #[serde(default)]
+    #[serde(skip_serializing_if = "is_default")]
     pub color: SourceColor,
     #[serde(default)]
+    #[serde(skip_serializing_if = "is_default")]
     pub is_maximized: bool
 }
 
@@ -31,24 +33,6 @@ impl IntoWithLogin for PredictionsSourceOptions {
 impl PredictionsSourceOptions {
     pub fn new() -> Self {
         return Default::default();
-    }
-
-    pub fn with_color(&self, color: SourceColor) -> Self {
-        Self {
-            color,
-            ..*self
-        }
-    }
-
-    pub fn with_is_expanded(&self, is_expanded: bool) -> Self {
-        Self {
-            is_maximized: is_expanded,
-            ..*self
-        }
-    }
-
-    pub fn with_login_token(&self, token: &str) -> PredictionsSourceOptionsLogin {
-        PredictionsSourceOptionsLogin { data: self.clone(), login_token: token.to_string() }
     }
 }
 

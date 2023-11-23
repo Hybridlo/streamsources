@@ -1,6 +1,6 @@
 use anyhow::Result;
 use thiserror::Error;
-use twitch_sources_rework::common_data::{EventSubMessage, EventSubData};
+use twitch_sources_rework::common_data::eventsub_msgs::{EventSubMessage, EventSubData};
 
 use crate::{db::TwitchUserDb, domain::users::{TwitchUser, DeleteUserError}, my_redis::{RedisError, publisher::MessagePublisher}, websockets};
 

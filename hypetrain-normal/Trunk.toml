@@ -1,4 +1,4 @@
 [build]
 target = "./index.html"
-dist = "../sources/hypetrain/normal/"
-public_url = "/sources/hypetrain/normal/"
+dist = "../sources/hype_train/normal/"
+public_url = "/sources/hype_train/normal/"

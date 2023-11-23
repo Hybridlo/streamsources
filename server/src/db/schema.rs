@@ -29,8 +29,8 @@ diesel::table! {
         #[sql_name = "type"]
         #[max_length = 100]
         type_ -> Varchar,
-        connected -> Bool,
-        inactive_since -> Timestamp,
+        last_connect -> Timestamp,
+        last_disconnect -> Timestamp,
     }
 }
 
@@ -45,6 +45,7 @@ diesel::table! {
         refresh_token -> Varchar,
         creation -> Timestamp,
         last_login -> Timestamp,
+        last_token_refresh -> Timestamp,
         expires_in -> Int4,
         scopes -> Array<Nullable<Text>>,
         #[max_length = 30]

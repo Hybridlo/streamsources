@@ -24,7 +24,7 @@ pub fn boolean_chooser(props: &ChooserProps) -> Html {
                                 move |_| state.set(true)
                             }
                         />
-                            <label class="form-check-label" for="expandedOptionTrue">
+                        <label class="form-check-label" for="expandedOptionTrue">
                             { props.true_text }
                         </label>
                     </div>

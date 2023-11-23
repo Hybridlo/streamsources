@@ -1,23 +1,23 @@
 use auto_delegate::delegate;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
-use twitch_sources_rework::common_data::SubType;
+use twitch_sources_rework::common_data::eventsub_msgs::SubType;
 
 use crate::http_client::twitch_client::SubData;
 
 use super::{db_subscription, DbError, Repository, ResultDb};
 
 
-#[derive(Queryable)]
+#[derive(Clone, Queryable, Identifiable, AsChangeset, Debug)]
+#[diesel(table_name = db_subscription)]
 pub struct Subscription {
     pub id: i64,
     pub user_id: Option<i64>,
     pub secret: String,
     pub sub_id: String,
-    #[diesel(deserialize_as = String)]
-    pub type_: SubType,
-    pub connected: bool,
-    pub inactive_since: time::PrimitiveDateTime
+    pub type_: String,
+    pub last_connect: time::PrimitiveDateTime,
+    pub last_disconnect: time::PrimitiveDateTime
 }
 
 #[derive(Insertable)]
@@ -29,16 +29,18 @@ struct SubscriptionNew {
     type_: String,
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 #[delegate]
 pub trait SubscriptionDb {
     async fn get_subscriptions(&self, sub_types: &[SubType], user_id: Option<i64>) -> ResultDb<Vec<Subscription>>;
     async fn create_subscriptions(&self, new_subs: Vec<SubData>, user_id: Option<i64>) -> ResultDb<Vec<Subscription>>;
     async fn get_subscription(&self, sub_id: &str) -> ResultDb<Option<Subscription>>;
     async fn remove_subscription(&self, sub_id: &str) -> ResultDb<()>;
+    async fn update_connect_time_by_id(&self, sub_id: &str) -> ResultDb<()>;
+    async fn update_disconnect_time_by_id(&self, sub_id: &str) -> ResultDb<()>;
 }
 
-#[async_trait::async_trait(?Send)]
+#[async_trait::async_trait]
 impl SubscriptionDb for Repository {
     async fn get_subscriptions(&self, sub_types: &[SubType], user_id: Option<i64>) -> ResultDb<Vec<Subscription>> {
         let mut db_conn = self.get_conn().await?;
@@ -89,6 +91,34 @@ impl SubscriptionDb for Repository {
 
         diesel::delete(db_subscription::dsl::subscription
             .filter(db_subscription::dsl::sub_id.eq(sub_id)))
+            .execute(&mut db_conn).await
+            .map_err(|_| DbError::Other)?;
+
+        Ok(())
+    }
+
+    async fn update_connect_time_by_id(&self, sub_id: &str) -> ResultDb<()> {
+        let mut db_conn = self.get_conn().await?;
+
+        diesel::update(
+            db_subscription::dsl::subscription
+                .filter(db_subscription::dsl::sub_id.eq(sub_id))
+            )
+            .set(db_subscription::dsl::last_connect.eq(diesel::dsl::now))
+            .execute(&mut db_conn).await
+            .map_err(|_| DbError::Other)?;
+
+        Ok(())
+    }
+
+    async fn update_disconnect_time_by_id(&self, sub_id: &str) -> ResultDb<()> {
+        let mut db_conn = self.get_conn().await?;
+
+        diesel::update(
+            db_subscription::dsl::subscription
+                .filter(db_subscription::dsl::sub_id.eq(sub_id))
+            )
+            .set(db_subscription::dsl::last_disconnect.eq(diesel::dsl::now))
             .execute(&mut db_conn).await
             .map_err(|_| DbError::Other)?;
 

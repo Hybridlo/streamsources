@@ -5,7 +5,7 @@ use actix_web::HttpResponse;
 use actix_web::web::Bytes;
 use serde::Deserialize;
 use serde_json::Value;
-use twitch_sources_rework::common_data::EventSubMessage;
+use twitch_sources_rework::common_data::eventsub_msgs::EventSubMessage;
 
 use crate::domain::subscription::GetSub;
 use crate::domain::subscription::Subscription;

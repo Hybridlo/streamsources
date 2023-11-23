@@ -21,7 +21,10 @@ pub fn static_source_link<T: Serialize + PartialEq>(props: &SourceLinkProps<T>) 
 
     let clipboard_handle = use_clipboard();
 
-    let options_encoded = serde_urlencoded::ser::to_string(&props.options).expect("Source link options to be serializable");
+    let mut options_encoded = serde_urlencoded::ser::to_string(&props.options).expect("Source link options to be serializable");
+    if !options_encoded.is_empty() {
+        options_encoded.insert_str(0, "?");
+    }
 
     let copy_timer: Rc<RefCell<Option<Timeout>>> = use_mut_ref(|| None);
     let copy_button_text = use_state(|| "Copy");
@@ -68,10 +71,10 @@ pub fn static_source_link<T: Serialize + PartialEq>(props: &SourceLinkProps<T>) 
             let href = href.clone();
             
             clipboard_handle.write_text(
-                    href + "/sources"
+                href + "/sources"
                     + "/" + source_name
                     + "/" + &skin
-                    + "?" + &options_encoded
+                    + &options_encoded
             );
             
             update_copy_button_data("Copied!");
@@ -102,7 +105,7 @@ pub fn static_source_link<T: Serialize + PartialEq>(props: &SourceLinkProps<T>) 
                     href.clone() + "/sources"
                     + "/" + &props.source_name
                     + "/" + &props.skin
-                    + "?" + &options_encoded
+                    + &options_encoded
                 }
             />
             <button class="btn btn-outline-secondary" type="button" id="srcCopy" ref={button_ref}

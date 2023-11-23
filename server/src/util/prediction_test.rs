@@ -4,10 +4,10 @@ use anyhow::{Result, anyhow};
 use actix::{Actor, Context, WrapFuture, AsyncContext};
 use rand::Rng;
 use time::{OffsetDateTime, Duration, format_description::well_known::Rfc3339};
-use twitch_sources_rework::common_data::{EventSubMessage, EventSubData, PredictionsOutcome, TopPredictior, ChannelPredictionBegin, ChannelPredictionProgress, ChannelPredictionLock, ChannelPredictionEnd};
+use twitch_sources_rework::common_data::eventsub_msgs::{EventSubMessage, EventSubData, PredictionsOutcome, TopPredictior, ChannelPredictionBegin, ChannelPredictionProgress, ChannelPredictionLock, ChannelPredictionEnd};
 use tokio::time::sleep as async_sleep;
 
-use crate::{RunningTests, my_redis::{RedisClient, publisher::MessagePublisher}};
+use crate::{RunningTests, my_redis::{RedisClient, publisher::MessagePublisher}, websockets::WEBSOCKET_DATA_TYPES};
 
 use super::get_redis_client_pool;
 
@@ -79,7 +79,7 @@ async fn execute_test(user_id: &str) -> Result<()> {
         msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&begin_msg).expect("No way we fail serialization");
-    conn.publish_message(user_id, "predictions", &data).await?;
+    conn.publish_message(user_id, WEBSOCKET_DATA_TYPES[0].topic, &data).await?;
     async_sleep(std::time::Duration::from_secs(1)).await;
 
     let progress_msg1 = EventSubMessage {
@@ -137,7 +137,7 @@ async fn execute_test(user_id: &str) -> Result<()> {
         msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&progress_msg1).expect("No way we fail serialization");
-    conn.publish_message(user_id, "predictions", &data).await?;
+    conn.publish_message(user_id, WEBSOCKET_DATA_TYPES[0].topic, &data).await?;
     async_sleep(std::time::Duration::from_secs(3)).await;
 
     let progress_msg2 = EventSubMessage {
@@ -203,7 +203,7 @@ async fn execute_test(user_id: &str) -> Result<()> {
         msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&progress_msg2).expect("No way we fail serialization");
-    conn.publish_message(user_id, "predictions", &data).await?;
+    conn.publish_message(user_id, WEBSOCKET_DATA_TYPES[0].topic, &data).await?;
     async_sleep(std::time::Duration::from_secs(2)).await;
 
     let progress_msg3 = EventSubMessage {
@@ -277,7 +277,7 @@ async fn execute_test(user_id: &str) -> Result<()> {
         msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&progress_msg3).expect("No way we fail serialization");
-    conn.publish_message(user_id, "predictions", &data).await?;
+    conn.publish_message(user_id, WEBSOCKET_DATA_TYPES[0].topic, &data).await?;
     async_sleep(std::time::Duration::from_secs(2)).await;
 
     let progress_msg4 = EventSubMessage {
@@ -359,7 +359,7 @@ async fn execute_test(user_id: &str) -> Result<()> {
         msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&progress_msg4).expect("No way we fail serialization");
-    conn.publish_message(user_id, "predictions", &data).await?;
+    conn.publish_message(user_id, WEBSOCKET_DATA_TYPES[0].topic, &data).await?;
     async_sleep((lock_time - OffsetDateTime::now_utc()).try_into().unwrap()).await;
 
     let lock_msg = EventSubMessage {
@@ -441,7 +441,7 @@ async fn execute_test(user_id: &str) -> Result<()> {
         msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&lock_msg).expect("No way we fail serialization");
-    conn.publish_message(user_id, "predictions", &data).await?;
+    conn.publish_message(user_id, WEBSOCKET_DATA_TYPES[0].topic, &data).await?;
     async_sleep((end_time - OffsetDateTime::now_utc()).try_into().unwrap()).await;
 
     let end_msg = EventSubMessage {
@@ -525,7 +525,7 @@ async fn execute_test(user_id: &str) -> Result<()> {
         msg_time: OffsetDateTime::now_utc().format(&Rfc3339).unwrap(),
     };
     let data = serde_json::ser::to_vec(&end_msg).expect("No way we fail serialization");
-    conn.publish_message(user_id, "predictions", &data).await?;
+    conn.publish_message(user_id, WEBSOCKET_DATA_TYPES[0].topic, &data).await?;
 
     Ok(())
 }

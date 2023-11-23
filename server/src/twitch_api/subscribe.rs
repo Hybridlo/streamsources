@@ -1,6 +1,6 @@
 use rand::Rng;
 use thiserror::Error;
-use twitch_sources_rework::common_data::SubType;
+use twitch_sources_rework::common_data::eventsub_msgs::SubType;
 
 #[cfg(not(debug_assertions))]
 use crate::PROD_BASE_URL;

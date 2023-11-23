@@ -7,7 +7,8 @@ pub struct TwitchUser {
     pub id: i64,
     pub username: String,
     pub creation: time::PrimitiveDateTime,
-    pub broadcaster_type: String
+    pub broadcaster_type: String,
+    pub scopes: Vec<String>
 }
 
 impl TwitchUser {
@@ -103,6 +104,8 @@ mod db_conv {
                 username: user.username,
                 creation: user.creation,
                 broadcaster_type: user.broadcaster_type,
+                // Option, because weird DB shenanigans, can be unwrapped
+                scopes: user.scopes.into_iter().map(Option::unwrap).collect(),
             }
         }
     }

@@ -4,17 +4,18 @@ use actix_web::http::{header, StatusCode};
 use actix_web::web::{Json, Query};
 use paperclip::actix::{Apiv2Schema, api_v2_operation};
 use serde::{Serialize, Deserialize};
+use itertools::Itertools as _;
 
 use crate::domain::users::TwitchUser;
 use crate::errors::IntoResultMyErr;
 use crate::errors::{e500, MyErrors};
-use crate::SCOPES;
 use crate::REDIRECT_URL;
 use crate::domain::auth_state::AuthState;
 use crate::domain::login_token::LoginToken;
 use crate::util::Context;
 use crate::util::get_twitch_key;
 use crate::util::session_state::TypedSession;
+use crate::websockets::WEBSOCKET_DATA_TYPES;
 
 
 #[derive(Serialize, Apiv2Schema)]
@@ -34,7 +35,12 @@ impl LoginUrlResponse {
             client_id: twitch_key,
             redirect_uri: host.to_string() + REDIRECT_URL,
             response_type: "code".to_string(),
-            scope: SCOPES.join("%20"),
+            scope: WEBSOCKET_DATA_TYPES
+                .into_iter()
+                .flat_map(|type_| type_.scopes)
+                .map(|a| *a)
+                .intersperse(" ")
+                .collect(),
             state: state.to_string()
         }
     }

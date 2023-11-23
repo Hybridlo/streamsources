@@ -1,6 +1,7 @@
 mod common;
 mod context;
 mod prediction_test;
+mod hype_train_test;
 
 pub mod message_manager;
 pub mod session_state;
@@ -17,3 +18,4 @@ pub use common::RedisPool;
 pub use common::DbPool;
 pub use context::Context;
 pub use prediction_test::PredictionsTestActor;
+pub use hype_train_test::HypetrainTestActor;

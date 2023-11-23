@@ -8,7 +8,7 @@ pub use get_new_token_info::GetTokenError;
 pub use get_user_token_info::{UserTokenResponse, GetUserTokenError};
 pub use subscribe_info::{SubCondition, SubData, SubscribeRequestError};
 pub use get_user_data_info::{UserDataObject, GetUserDataError};
-use twitch_sources_rework::common_data::SubType;
+use twitch_sources_rework::common_data::eventsub_msgs::SubType;
 
 pub const TWITCH_API_URI: &str = "https://api.twitch.tv/helix";
 pub const TWITCH_API_AUTH: &str = "https://id.twitch.tv";
@@ -145,7 +145,7 @@ mod get_new_token_info {
 mod subscribe_info {
     use serde::{Serialize, Deserialize};
     use thiserror::Error;
-    use twitch_sources_rework::common_data::SubType;
+    use twitch_sources_rework::common_data::eventsub_msgs::SubType;
 
     use crate::util::get_twitch_key;
 

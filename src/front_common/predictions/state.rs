@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use yew::UseStateSetter;
 use gloo_timers::callback::{Interval, Timeout};
 
-use crate::{FPS, GLOBAL_DELAY_VALUE, GLOBAL_DELAY_VALUE_SECONDS, common_data::{EventSubData, EventSubMessage}};
+use crate::{FPS, GLOBAL_DELAY_VALUE, GLOBAL_DELAY_VALUE_SECONDS, common_data::eventsub_msgs::{EventSubData, EventSubMessage}};
 use super::super::transition_funcs::ease_in_out_formula;
 
 #[derive(Clone, Debug, PartialEq)]

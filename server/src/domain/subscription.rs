@@ -2,7 +2,7 @@ use futures_util::future::try_join_all;
 use hmac::{Hmac, Mac as _};
 use sha2::Sha256;
 use thiserror::Error;
-use twitch_sources_rework::common_data::SubType;
+use twitch_sources_rework::common_data::eventsub_msgs::SubType;
 
 use crate::{db::{SubscriptionDb, DbError}, twitch_api::subscribe::{TwitchSubscriptionManager, TwitchSubscriptionError}, http_client::twitch_client::SubCondition};
 
@@ -12,12 +12,13 @@ pub struct Subscription {
     secret: String,
     sub_id: String,
     type_: SubType,
-    connected: bool,
-    inactive_since: time::PrimitiveDateTime
+    last_connect: time::PrimitiveDateTime,
+    last_disconnect: time::PrimitiveDateTime,
 }
 
 type HmacSha256 = Hmac<Sha256>;
 
+// "DB" impl
 impl Subscription {
     pub async fn get_or_create_subscriptions<Ctx: SubscriptionDb + TwitchSubscriptionManager>(
         ctx: &Ctx,
@@ -64,6 +65,17 @@ impl Subscription {
         Ok(())
     }
 
+    pub async fn update_connect_time_by_id<Repo: SubscriptionDb>(db: &Repo, sub_id: &str) -> Result<(), UpdateConnect> {
+        db.update_connect_time_by_id(sub_id).await.map_err(|_| UpdateConnect::Fail)
+    }
+
+    pub async fn update_disconnect_time_by_id<Repo: SubscriptionDb>(db: &Repo, sub_id: &str) -> Result<(), UpdateDisconnect> {
+        db.update_disconnect_time_by_id(sub_id).await.map_err(|_| UpdateDisconnect::Fail)
+    }
+}
+
+// struct impl
+impl Subscription {
     pub fn verify_msg(&self, msg: &[u8], expected_signature: &[u8]) -> bool {
         let mut hasher = HmacSha256::new_from_slice(self.secret.as_bytes()).expect("HMAC can take key of any size");
 
@@ -74,6 +86,10 @@ impl Subscription {
         ].concat();
 
         return res_hash == expected_signature
+    }
+
+    pub fn sub_id(&self) -> &str {
+        &self.sub_id
     }
 }
 
@@ -101,6 +117,18 @@ pub enum RemoveSub {
     Fail
 }
 
+#[derive(Debug, Error)]
+pub enum UpdateConnect {
+    #[error("Failed to update subscription connect time")]
+    Fail
+}
+
+#[derive(Debug, Error)]
+pub enum UpdateDisconnect {
+    #[error("Failed to update subscription disconnect time")]
+    Fail
+}
+
 mod db_conv {
     use super::Subscription;
     use crate::db::Subscription as DbSubscription;
@@ -112,9 +140,9 @@ mod db_conv {
                 user_id: sub.user_id,
                 secret: sub.secret,
                 sub_id: sub.sub_id,
-                type_: sub.type_,
-                connected: sub.connected,
-                inactive_since: sub.inactive_since,
+                type_: sub.type_.try_into().unwrap(),
+                last_connect: sub.last_connect,
+                last_disconnect: sub.last_disconnect,
             }
         }
     }

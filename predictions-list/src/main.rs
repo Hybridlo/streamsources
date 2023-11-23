@@ -1,4 +1,4 @@
-use twitch_sources_rework::common_data::EventSubMessage;
+use twitch_sources_rework::common_data::eventsub_msgs::EventSubMessage;
 use twitch_sources_rework::front_common::predictions::PredictionState;
 use twitch_sources_rework::front_common::predictions::PredictionStateAnimator;
 use twitch_sources_rework::front_common::predictions::PredictionsSourceOptions;

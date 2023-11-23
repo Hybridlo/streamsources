@@ -1113,9 +1113,9 @@ dependencies = [
 
 [[package]]
 name = "getrandom"
-version = "0.2.7"
+version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4eb1a864a501629691edf6c15a593b7a51eebaa1e8468e9ddc623de7c9b58ec6"
+checksum = "fe9006bed769170c11f845cf00c7c1e9092aeb3f268e007c3e760ac68008070f"
 dependencies = [
  "cfg-if",
  "js-sys",
@@ -1150,7 +1150,7 @@ dependencies = [
  "gloo-dialogs",
  "gloo-events",
  "gloo-file",
- "gloo-render",
+ "gloo-render 0.1.1",
  "gloo-storage",
  "gloo-timers",
  "gloo-utils",
@@ -1168,7 +1168,7 @@ dependencies = [
  "gloo-file",
  "gloo-history",
  "gloo-net",
- "gloo-render",
+ "gloo-render 0.1.1",
  "gloo-storage",
  "gloo-timers",
  "gloo-utils",
@@ -1261,6 +1261,16 @@ name = "gloo-render"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2fd9306aef67cfd4449823aadcd14e3958e0800aa2183955a309112a84ec7764"
+dependencies = [
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
+name = "gloo-render"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56008b6744713a8e8d98ac3dcb7d06543d5662358c9c805b4ce2167ad4649833"
 dependencies = [
  "wasm-bindgen",
  "web-sys",
@@ -1552,6 +1562,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1c173a5686ce8bfa551b3563d0c2170bf24ca44da99c7ca4bfdab5418c3fe57"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1836,7 +1855,7 @@ checksum = "f399678683ec199ddca1dd54db957dd158dedb5fc90826eb2a7e6c0800c3a868"
 dependencies = [
  "anyhow",
  "indexmap",
- "itertools",
+ "itertools 0.10.5",
  "once_cell",
  "openapiv3",
  "paperclip-actix",
@@ -2449,6 +2468,7 @@ dependencies = [
  "futures-util",
  "hex",
  "hmac",
+ "itertools 0.11.0",
  "log",
  "paperclip",
  "rand",
@@ -2824,10 +2844,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "gloo-render 0.2.0",
  "gloo-timers",
  "serde",
  "serde_json",
  "strum",
+ "thiserror",
+ "uuid",
  "wasm-bindgen",
  "web-sys",
  "yew",
@@ -2895,11 +2918,13 @@ dependencies = [
 
 [[package]]
 name = "uuid"
-version = "1.2.1"
+version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "feb41e78f93363bb2df8b0e86a2ca30eed7806ea16ea0c790d757cf93f79be83"
+checksum = "88ad59a7560b41a70d191093a945f0b87bc1deeda46fb237479708a1d6b6cdfc"
 dependencies = [
+ "getrandom",
  "serde",
+ "wasm-bindgen",
 ]
 
 [[package]]

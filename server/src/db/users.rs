@@ -1,5 +1,5 @@
 use auto_delegate::delegate;
-use diesel::prelude::*;
+use diesel::{prelude::*, associations::HasTable, query_builder::IntoUpdateTarget};
 use diesel_async::{RunQueryDsl, SaveChangesDsl};
 
 use super::{twitch_users, ResultDb, Repository, DbError};
@@ -16,7 +16,7 @@ pub struct NewTwitchUser {
     pub broadcaster_type: String
 }
 
-#[derive(Clone, Queryable, Identifiable, AsChangeset, Debug)]
+#[derive(Queryable, Identifiable, AsChangeset, Debug)]
 pub struct TwitchUser {
     pub id: i64,
     pub username: String,
@@ -24,6 +24,7 @@ pub struct TwitchUser {
     pub refresh_token: String,
     pub creation: time::PrimitiveDateTime,
     pub last_login: time::PrimitiveDateTime,
+    pub last_token_refresh: time::PrimitiveDateTime,
     pub expires_in: i32,
     pub scopes: Vec<Option<String>>,
     pub broadcaster_type: String
@@ -33,8 +34,8 @@ pub struct TwitchUser {
 #[delegate]
 pub trait TwitchUserDb {
     async fn get_user(&self, user_id: i64) -> ResultDb<Option<TwitchUser>>;
-    async fn save_user(&self, new_user: &TwitchUser) -> ResultDb<()>;
-    async fn insert_user(&self, user: NewTwitchUser) -> ResultDb<TwitchUser>;
+    async fn save_user(&self, user: &TwitchUser) -> ResultDb<()>;
+    async fn insert_user(&self, new_user: NewTwitchUser) -> ResultDb<TwitchUser>;
     async fn delete_user(&self, user_id: i64) -> ResultDb<()>;
 }
 
@@ -53,6 +54,8 @@ impl TwitchUserDb for Repository {
 
     async fn save_user(&self, user: &TwitchUser) -> ResultDb<()> {
         let mut db_conn = self.get_conn().await?;
+        fn test<T: Copy + AsChangeset<Target = <T as HasTable>::Table> + IntoUpdateTarget>() {}
+        test::<&TwitchUser>();
 
         let _: TwitchUser = user.save_changes(&mut db_conn).await.map_err(|_| DbError::Other)?;
 

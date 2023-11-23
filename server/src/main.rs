@@ -22,11 +22,10 @@ use paperclip::actix::web;
 
 use actix_session::SessionMiddleware;
 
-use twitch_sources_rework::common_data::SubType;
+use twitch_sources_rework::common_data::eventsub_msgs::SubType;
 pub use util::DbPool;
 pub use util::RedisPool;
 
-const SCOPES: [&str; 1] = ["channel:read:predictions"];
 const REDIRECT_URL: &str = "/twitch_login/";
 const WEBHOOK_URL: &str = "/webhook/";
 

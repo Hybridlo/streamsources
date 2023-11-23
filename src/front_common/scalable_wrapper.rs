@@ -10,8 +10,16 @@ pub fn scalable_wrapper(content: Html) -> Html {
     let height_scale = parent_size.height / (node_size.height as f64);
 
     html! {
-        <div ref={parent_node} style={"height: 100%; text-align: center;"}>
-            <div ref={node} style={format!("display: inline-block; transform-origin: top center; transform: scale({})", width_scale.min(height_scale))}>
+        <div ref={parent_node} style={"height: 100%; width: 100%;"}>
+            <div
+                ref={node}
+                style={
+                    format!(
+                        "display: inline-block; transform-origin: top left; transform: scale({}) translateX(-50%); position: relative; left: 50%;",
+                        width_scale.min(height_scale)
+                    )
+                }
+            >
                 { content }
             </div>
         </div>

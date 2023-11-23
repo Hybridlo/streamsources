@@ -159,7 +159,7 @@ pub fn predictions_list(props: &PredictionsProps) -> Html {
     }
 
     scalable_wrapper(html! {
-        <div class={classes!(css)}>
+        <div class={classes!(css, "text-center")}>
             <div class={if *props.show_element_state {"element show"} else {"element hide"}}>
                 { title(&props.state.title) }
                 <div class={if *props.show_status_state {"status show"} else {"status hide"}}>

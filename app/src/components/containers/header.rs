@@ -10,7 +10,7 @@ pub fn header() -> Html {
         <div class="border-bottom mb-3">
             <div class="container">
                 <div class="d-flex flex-row p-2 align-items-center">
-                    <span class="site-title"><Link<BaseRoute> to={BaseRoute::Index}>{ "Twitch sources (beta)" }</Link<BaseRoute>></span>
+                    <span class="site-title"><Link<BaseRoute> to={BaseRoute::Index}>{ "StreamWidgets (beta)" }</Link<BaseRoute>></span>
                     <LoginState />
                 </div>
             </div>

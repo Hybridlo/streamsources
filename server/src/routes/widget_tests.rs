@@ -3,6 +3,7 @@ use actix_web::web::{Query, Json, Data};
 use paperclip::actix::{Apiv2Schema, api_v2_operation};
 use serde::Deserialize;
 use crate::RunningTests;
+use crate::util::HypetrainTestActor;
 use crate::util::{session_state::TypedSession, PredictionsTestActor};
 use crate::errors::MyErrors;
 
@@ -21,6 +22,14 @@ pub async fn execute_test(
             .map_err(|_| MyErrors::AccessDenied)?
             .start();
         },
+        AvaliableTests::HypeTrain => {
+            HypetrainTestActor::new(
+                (*tests_set).clone(),
+                session.get_user_id()?.ok_or(MyErrors::AccessDenied)?
+            )
+            .map_err(|_| MyErrors::AccessDenied)?
+            .start();
+        }
     }
 
     Ok(Json(()))
@@ -29,7 +38,8 @@ pub async fn execute_test(
 #[derive(Deserialize, Apiv2Schema)]
 #[serde(rename_all="snake_case")]
 pub enum AvaliableTests {
-    Predictions
+    Predictions,
+    HypeTrain
 }
 
 #[derive(Deserialize, Apiv2Schema)]

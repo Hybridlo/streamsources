@@ -116,23 +116,23 @@ pub fn predictions_settings() -> Html {
             <div class="container mb-3">
                 <div class="row gx-3 gy-4">
                 
-                    <div class="col-6">
+                    <div class="col-12">
                         <SourceColorChooser color={source_color.clone()} />
                     </div>
                     
-                    <div class="col-6">
+                    /* <div class="col-6">
                         <BooleanChooser title={"Size options"} true_text={"Maximized"} false_text={"Minimized"} bool_state={is_maximized.clone()} />
-                    </div>
+                    </div> */
 
                     <PredictionsCarousel color={*source_color} is_maximized={*is_maximized} {carousel_state} />
 
                     <div>
-                        <h5 class="text-center mb-2">{ "Link to source" }</h5>
+                        <h5 class="text-center mb-2">{ "Link to source (will require to login to Twitch in OBS)" }</h5>
                         // can't not have the generic, unfortunately
                         <StaticSourceLink<PredictionsSourceOptions> options={collected_options.clone()} source_name={"predictions"} skin={chosen_skin.to_string()} />
                     </div>
                     <div>
-                        <h5 class="text-center mb-2">{ "User-specific link (better to use in OBS)" }</h5>
+                        <h5 class="text-center mb-2">{ "User-specific link" }</h5>
                         { 
                             login_gate(html!{
                                 <LoginSourceLink<PredictionsSourceOptions> options={collected_options.clone()} source_name={"predictions"} skin={chosen_skin.to_string()} />
@@ -148,6 +148,7 @@ pub fn predictions_settings() -> Html {
                             { login_gate(html!{ <TestButton test_name={"predictions"} timeout_secs={13} /> }) }
                         </div>
                     </div>
+                    
                 </div>
             </div>
         </>
